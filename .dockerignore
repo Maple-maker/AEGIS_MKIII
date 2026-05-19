@@ -7,7 +7,8 @@ __pycache__/
 .DS_Store
 briefs/
 data/
-config/
+config/user_config.json
+config/habits.json
 audio/
 notes.md
 aegis_v1_working.py
