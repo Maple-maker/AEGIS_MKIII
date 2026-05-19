@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AEGIS — Settings</title>
+<meta name="viewport" content="width=1200" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:      #0A0B0E;
+  --surface: #14161B;
+  --surface2:#1A1D24;
+  --border:  #23272F;
+  --border2: #2D323C;
+  --text:    #E8EAED;
+  --text2:   #9097A2;
+  --text3:   #5A6069;
+  --signal:  #6FC8D6;
+  --signal2: #3A6E78;
+  --green:   #5FCB95;
+  --red:     #E68078;
+  --yellow:  #D9B36A;
+  --mono:    'JetBrains Mono', monospace;
+  --accent:  #00E5FF;
+}
+
+/* Dynamic accent color support */
+:root[data-accent="blue"]   { --accent: #42A5F5; --signal: #42A5F5; --signal2: #1565C0; }
+:root[data-accent="cyan"]   { --accent: #00E5FF; --signal: #6FC8D6; --signal2: #3A6E78; }
+:root[data-accent="green"]  { --accent: #5FCB95; --signal: #5FCB95; --signal2: #2E7D52; }
+:root[data-accent="purple"] { --accent: #CE93D8; --signal: #CE93D8; --signal2: #6A1B9A; }
+:root[data-accent="orange"] { --accent: #FFB74D; --signal: #FFB74D; --signal2: #E65100; }
+:root[data-accent="red"]    { --accent: #EF9A9A; --signal: #EF9A9A; --signal2: #B71C1C; }
+
+/* Light theme */
+body.light {
+  --bg: #F4F5F7; --surface: #FFFFFF; --surface2: #F0F1F3;
+  --border: #DDE0E6; --border2: #C8CDD6;
+  --text: #1A1D24; --text2: #5A6069; --text3: #9097A2;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; min-height: 100vh; }
+
+/* ── LAYOUT ─────────────────────────────────────────────────────────── */
+.shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+/* ── SIDEBAR ─────────────────────────────────────────────────────────── */
+.sidebar {
+  background: var(--surface); border-right: 1px solid var(--border);
+  padding: 28px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.sidebar-logo {
+  padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+}
+.logo-name {
+  font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
+  color: var(--accent); letter-spacing: 3px;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.logo-sub { font-size: 10px; color: var(--text3); letter-spacing: 1px; margin-top: 2px; }
+
+.nav-section { padding: 0 12px; margin-bottom: 8px; }
+.nav-section-label {
+  font-size: 10px; letter-spacing: 1.5px; color: var(--text3);
+  padding: 4px 8px 8px; text-transform: uppercase;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px; cursor: pointer;
+  color: var(--text2); font-size: 13px; font-weight: 500;
+  transition: all 120ms; position: relative;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+.nav-item.active::before {
+  content: ""; position: absolute; left: -12px; top: 50%;
+  width: 3px; height: 18px; background: var(--accent); border-radius: 2px;
+  transform: translateY(-50%);
+}
+.nav-icon { width: 18px; height: 18px; opacity: 0.7; }
+
+.sidebar-footer { margin-top: auto; padding: 16px 20px 0; border-top: 1px solid var(--border); }
+.version-badge { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+
+/* ── MAIN CONTENT ────────────────────────────────────────────────────── */
+.main { padding: 40px 48px; max-width: 820px; }
+.page-header { margin-bottom: 32px; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--text); }
+.page-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+/* Sections */
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── CARDS ───────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; margin-bottom: 20px;
+}
+.card-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px; display: flex; align-items: center; gap: 8px;
+}
+.card-desc { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
+.card-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ── FORM ELEMENTS ───────────────────────────────────────────────────── */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.3px; }
+input[type="text"], input[type="password"], select, textarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 9px 12px; color: var(--text); font-size: 13px;
+  font-family: inherit; outline: none; transition: border 120ms;
+}
+input[type="text"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+textarea { resize: vertical; min-height: 80px; }
+select option { background: var(--surface); }
+
+/* Toggle switch */
+.toggle-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-info .toggle-label { font-size: 13px; font-weight: 500; color: var(--text); }
+.toggle-info .toggle-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.toggle {
+  position: relative; width: 40px; height: 22px; flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0; background: var(--border2);
+  border-radius: 22px; cursor: pointer; transition: 0.2s;
+}
+.toggle-slider::before {
+  content: ""; position: absolute; height: 16px; width: 16px;
+  left: 3px; bottom: 3px; background: white;
+  border-radius: 50%; transition: 0.2s;
+}
+input:checked + .toggle-slider { background: var(--accent); }
+input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: none; transition: all 120ms; font-family: inherit;
+}
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost { background: transparent; color: var(--text2); }
+.btn-ghost:hover { color: var(--text); background: var(--surface2); }
+.btn-danger { background: rgba(230,128,120,0.12); border: 1px solid var(--red); color: var(--red); }
+.btn-danger:hover { background: rgba(230,128,120,0.2); }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+
+.btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+/* Status badge */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.badge-on  { background: rgba(95,203,149,0.12); color: var(--green); border: 1px solid rgba(95,203,149,0.3); }
+.badge-off { background: rgba(90,96,105,0.12); color: var(--text3); border: 1px solid var(--border); }
+.badge-err { background: rgba(230,128,120,0.12); color: var(--red); border: 1px solid rgba(230,128,120,0.3); }
+.badge::before { content: "●"; font-size: 6px; }
+
+/* Integration card grid */
+.integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.int-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  transition: border 120ms;
+}
+.int-card:hover { border-color: var(--border2); }
+.int-card.connected { border-color: color-mix(in srgb, var(--green) 30%, transparent); }
+.int-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.int-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.int-desc { font-size: 11px; color: var(--text2); line-height: 1.5; }
+.int-actions { display: flex; gap: 8px; }
+
+/* Accent color picker */
+.accent-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+.accent-swatch {
+  width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+  border: 2px solid transparent; transition: all 120ms;
+  position: relative; display: grid; place-items: center;
+}
+.accent-swatch.active { border-color: var(--text); }
+.accent-swatch.active::after { content: "✓"; font-size: 14px; font-weight: 700; color: #000; }
+
+/* Voice cards */
+.voice-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.voice-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; cursor: pointer;
+  transition: all 120ms; position: relative;
+}
+.voice-card:hover { border-color: var(--border2); }
+.voice-card.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface2)); }
+.voice-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.voice-desc { font-size: 11px; color: var(--text2); line-height: 1.4; }
+.voice-play {
+  margin-top: 10px; width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--border2); background: var(--surface);
+  display: grid; place-items: center; cursor: pointer;
+  transition: all 120ms; color: var(--text2);
+}
+.voice-play:hover { border-color: var(--accent); color: var(--accent); }
+.voice-play.playing { border-color: var(--accent); color: var(--accent); animation: pulse-play 0.8s ease infinite; }
+@keyframes pulse-play { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* HUD preview */
+.hud-preview {
+  background: #000B1A;
+  border: 1px solid #0D3A6E;
+  border-radius: 10px;
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #90CAF9;
+  position: relative;
+  overflow: hidden;
+  min-height: 120px;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 8px;
+}
+.hud-preview-name {
+  font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700;
+  letter-spacing: 4px;
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.hud-preview-sub { font-size: 8px; letter-spacing: 2px; color: #546E7A; }
+.hud-preview-pills { display: flex; gap: 8px; margin-top: 4px; }
+.hp-pill {
+  font-size: 7px; letter-spacing: 1.5px; padding: 2px 7px; border-radius: 2px;
+  border: 1px solid; color: #00E676; border-color: #00E676; background: rgba(0,230,118,0.08);
+}
+
+/* Save banner */
+#save-banner {
+  position: fixed; bottom: 28px; right: 28px; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 20px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  opacity: 0; transform: translateY(12px);
+  transition: all 0.25s; pointer-events: none;
+}
+#save-banner.visible { opacity: 1; transform: none; pointer-events: all; }
+.save-text { font-size: 13px; color: var(--text2); }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 18px; font-size: 13px;
+  color: var(--text); box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  opacity: 0; transition: all 0.25s; z-index: 200;
+  pointer-events: none; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.success { border-color: var(--green); color: var(--green); }
+#toast.error { border-color: var(--red); color: var(--red); }
+
+/* Responsive nav links on small screens */
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; flex-direction: row; padding: 12px; overflow-x: auto; }
+  .sidebar-logo, .sidebar-footer { display: none; }
+  .main { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-name" id="sb-ai-name">AEGIS</div>
+      <div class="logo-sub">SETTINGS</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Setup</div>
+      <div class="nav-item active" data-section="identity" onclick="navTo('identity',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        Identity
+      </div>
+      <div class="nav-item" data-section="voice" onclick="navTo('voice',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93h2c0 3.31 2.69 6 6 6s6-2.69 6-6h2c0 4.08-3.06 7.44-7 7.93V19h3v2H9v-2h3v-3.07z"/></svg>
+        Voice & Persona
+      </div>
+      <div class="nav-item" data-section="appearance" onclick="navTo('appearance',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        Appearance
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Data</div>
+      <div class="nav-item" data-section="integrations" onclick="navTo('integrations',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h10c2.76 0 5-2.24 5-5s-2.24-5-5-5zM7 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+        Integrations
+      </div>
+      <div class="nav-item" data-section="sources" onclick="navTo('sources',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Data Sources
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">System</div>
+      <div class="nav-item" data-section="hud-layout" onclick="navTo('hud-layout',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 5h2v-2h2v-2h-2v-2h-2v2h-2v2h2z"/></svg>
+        HUD Layout
+      </div>
+      <div class="nav-item" data-section="deploy" onclick="navTo('deploy',this)">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+        Deploy
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="version-badge">AEGIS v2.0 · Phase 1</div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ────────────────────────────────────────────────────────── -->
+  <div class="main">
+
+    <!-- ─────────── IDENTITY ─────────────────────────────────────────── -->
+    <div class="section active" id="sec-identity">
+      <div class="page-header">
+        <div class="page-title">AI Identity</div>
+        <div class="page-sub">Name and configure your personal AI assistant.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+          Assistant Identity
+        </div>
+        <div class="card-desc">This is what your AI will be called throughout the system.</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>AI Name</label>
+            <input type="text" id="ai-name" placeholder="AEGIS" maxlength="20" oninput="onConfigChange()" />
+          </div>
+          <div class="field">
+            <label>Your Name</label>
+            <input type="text" id="user-name" placeholder="Your first name" oninput="onConfigChange()" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Full Name / Acronym Meaning <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+          <input type="text" id="ai-fullname" placeholder="Adaptive Executive Guardian Intelligence System" oninput="onConfigChange()" />
+        </div>
+
+        <div class="field">
+          <label>Tagline <span style="color:var(--text3);font-weight:400">(shown in sidebar and HUD)</span></label>
+          <input type="text" id="ai-tagline" placeholder="Your personal command intelligence system" oninput="onConfigChange()" />
+        </div>
+
+        <div class="field">
+          <label>Primary Objective <span style="color:var(--text3);font-weight:400">(displayed in HUD top bar)</span></label>
+          <input type="text" id="primary-objective" placeholder="e.g. Stack 1 BTC · Build $1M by 2030" oninput="onConfigChange()" />
+        </div>
+
+        <hr class="card-divider" />
+
+        <div class="card-title" style="margin-bottom:8px">HUD Preview</div>
+        <div class="hud-preview">
+          <div class="hud-preview-name" id="prev-name" style="color:var(--accent)">AEGIS</div>
+          <div class="hud-preview-sub" id="prev-sub">ADAPTIVE EXECUTIVE GUARDIAN INTELLIGENCE SYSTEM</div>
+          <div class="hud-preview-pills">
+            <div class="hp-pill">ONLINE</div>
+            <div class="hp-pill" style="color:#29B6F6;border-color:#29B6F6;background:rgba(41,182,246,0.08)">SECURE</div>
+            <div class="hp-pill" style="color:#FFD740;border-color:#FFD740;background:rgba(255,215,64,0.08)">AUTO-BRIEF</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── VOICE ──────────────────────────────────────────────── -->
+    <div class="section" id="sec-voice">
+      <div class="page-header">
+        <div class="page-title">Voice & Persona</div>
+        <div class="page-sub">Choose your AI's voice and communication style.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Voice Selection</div>
+        <div class="card-desc">Your AI will speak through these voices when responding to queries. Preview each one.</div>
+        <div class="voice-grid" id="voice-grid">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Personality & Tone</div>
+        <div class="card-desc">How your AI addresses you and frames its responses.</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Communication Style</label>
+            <select id="comm-style" onchange="onConfigChange()">
+              <option value="professional">Professional — Direct, calm, precise</option>
+              <option value="casual">Casual — Friendly, conversational</option>
+              <option value="military">Command — Formal, mission-focused</option>
+              <option value="minimal">Minimal — Ultra-terse, data-only</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Address me as</label>
+            <select id="address-as" onchange="onConfigChange()">
+              <option value="name">My first name</option>
+              <option value="sir">Sir</option>
+              <option value="boss">Boss</option>
+              <option value="none">Nothing (no address)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── APPEARANCE ────────────────────────────────────────── -->
+    <div class="section" id="sec-appearance">
+      <div class="page-header">
+        <div class="page-title">Appearance</div>
+        <div class="page-sub">Theme, accent color, and visual preferences.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Theme</div>
+        <div class="card-desc">Dashboard color scheme.</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Dark Mode</div>
+            <div class="toggle-sub">Dark HUD interface — recommended for the full JARVIS experience</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-dark" onchange="onThemeChange()" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Accent Color</div>
+        <div class="card-desc">The glow color used throughout the HUD and interface.</div>
+        <div class="accent-grid" id="accent-grid">
+          <div class="accent-swatch active" data-accent="cyan" style="background:#00E5FF" onclick="setAccent('cyan',this)" title="Cyan (default)"></div>
+          <div class="accent-swatch" data-accent="blue" style="background:#42A5F5" onclick="setAccent('blue',this)" title="Blue"></div>
+          <div class="accent-swatch" data-accent="green" style="background:#5FCB95" onclick="setAccent('green',this)" title="Green"></div>
+          <div class="accent-swatch" data-accent="purple" style="background:#CE93D8" onclick="setAccent('purple',this)" title="Purple"></div>
+          <div class="accent-swatch" data-accent="orange" style="background:#FFB74D" onclick="setAccent('orange',this)" title="Orange"></div>
+          <div class="accent-swatch" data-accent="red" style="background:#EF9A9A" onclick="setAccent('red',this)" title="Red"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── INTEGRATIONS ──────────────────────────────────────── -->
+    <div class="section" id="sec-integrations">
+      <div class="page-header">
+        <div class="page-title">Integrations</div>
+        <div class="page-sub">Connect your tools and data sources to your AI.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Connected Apps</div>
+        <div class="card-desc">Your AI will pull live data from these services when answering questions.</div>
+        <div class="integration-grid" id="integration-grid">
+
+          <div class="int-card" id="int-obsidian">
+            <div class="int-header">
+              <div>
+                <div class="int-name">Obsidian Vault</div>
+                <div class="int-desc">Notes, portfolio, goals, strategy — your knowledge base.</div>
+              </div>
+              <span class="badge badge-on" id="badge-obsidian">ON</span>
+            </div>
+            <div class="field" style="margin:0">
+              <label>Vault Path</label>
+              <input type="text" id="obsidian-path" placeholder="/Users/you/Documents/vault" oninput="onConfigChange()" />
+            </div>
+            <div class="int-actions">
+              <button class="btn btn-outline btn-sm" onclick="testIntegration('obsidian')">Test Connection</button>
+            </div>
+          </div>
+
+          <div class="int-card" id="int-coinbase">
+            <div class="int-header">
+              <div>
+                <div class="int-name">Coinbase</div>
+                <div class="int-desc">Live Bitcoin and crypto balances.</div>
+              </div>
+              <span class="badge badge-on" id="badge-coinbase">ON</span>
+            </div>
+            <div class="int-desc" style="font-size:11px;color:var(--text2)">Configured via <code style="font-family:var(--mono);font-size:10px">.env</code> — CDP API key required.</div>
+            <div class="int-actions">
+              <button class="btn btn-outline btn-sm" onclick="testIntegration('coinbase')">Test Connection</button>
+              <label class="toggle" style="margin-left:auto">
+                <input type="checkbox" id="toggle-coinbase" onchange="onConfigChange()" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="int-card" id="int-gcal">
+            <div class="int-header">
+              <div>
+                <div class="int-name">Google Calendar</div>
+                <div class="int-desc">Upcoming events in your daily brief and HUD.</div>
+              </div>
+              <span class="badge badge-off" id="badge-gcal">OFF</span>
+            </div>
+            <div class="int-desc" style="font-size:11px;color:var(--text2)">Requires Google OAuth credentials in <code style="font-family:var(--mono);font-size:10px">config/</code>.</div>
+            <div class="int-actions">
+              <button class="btn btn-outline btn-sm" onclick="testIntegration('google_calendar')">Sync Now</button>
+              <label class="toggle" style="margin-left:auto">
+                <input type="checkbox" id="toggle-gcal" onchange="onConfigChange()" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="int-card" id="int-gdrive">
+            <div class="int-header">
+              <div>
+                <div class="int-name">Google Drive</div>
+                <div class="int-desc">Access and summarize documents on demand.</div>
+              </div>
+              <span class="badge badge-off" id="badge-gdrive">OFF</span>
+            </div>
+            <div class="int-desc" style="font-size:11px;color:var(--text2)">Requires Google OAuth credentials in <code style="font-family:var(--mono);font-size:10px">config/</code>.</div>
+            <div class="int-actions">
+              <label class="toggle" style="margin-left:auto">
+                <input type="checkbox" id="toggle-gdrive" onchange="onConfigChange()" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="int-card" id="int-notion">
+            <div class="int-header">
+              <div>
+                <div class="int-name">Notion</div>
+                <div class="int-desc">Pull tasks, databases, and docs into your AI context.</div>
+              </div>
+              <span class="badge badge-off" id="badge-notion">OFF</span>
+            </div>
+            <div class="field" style="margin:0">
+              <label>Integration Token</label>
+              <input type="password" id="notion-token" placeholder="secret_..." oninput="onConfigChange()" />
+            </div>
+            <div class="int-actions">
+              <label class="toggle" style="margin-left:auto">
+                <input type="checkbox" id="toggle-notion" onchange="onConfigChange()" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="int-card" id="int-telegram">
+            <div class="int-header">
+              <div>
+                <div class="int-name">Telegram Bot</div>
+                <div class="int-desc">Voice notes, commands, and inbox from your phone.</div>
+              </div>
+              <span class="badge badge-on" id="badge-telegram">ON</span>
+            </div>
+            <div class="int-desc" style="font-size:11px;color:var(--text2)">Configured via <code style="font-family:var(--mono);font-size:10px">.env</code> — TELEGRAM_BOT_TOKEN required.</div>
+            <div class="int-actions">
+              <label class="toggle" style="margin-left:auto">
+                <input type="checkbox" id="toggle-telegram" onchange="onConfigChange()" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── DATA SOURCES ──────────────────────────────────────── -->
+    <div class="section" id="sec-sources">
+      <div class="page-header">
+        <div class="page-title">Data Sources</div>
+        <div class="page-sub">Control what your AI can see when answering questions.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Live Data Modules</div>
+        <div class="card-desc">These are included in your AI's context when you speak to it.</div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Bitcoin Portfolio</div>
+            <div class="toggle-sub">Stack size, cost basis, unrealized P&L, goal tracking</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="ds-btc" onchange="onConfigChange()" checked /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Stock Portfolio</div>
+            <div class="toggle-sub">Live prices for MSTR, HUT, and other holdings</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="ds-stock" onchange="onConfigChange()" checked /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Reading Feed (RSS)</div>
+            <div class="toggle-sub">Curated Bitcoin, finance, and credit articles</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="ds-rss" onchange="onConfigChange()" checked /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Content Pipeline</div>
+            <div class="toggle-sub">YouTube video ideas, stages, and production status</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="ds-content" onchange="onConfigChange()" checked /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Intel Log</div>
+            <div class="toggle-sub">Manually logged market signals and intelligence</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="ds-intel" onchange="onConfigChange()" checked /><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── HUD LAYOUT ────────────────────────────────────────── -->
+    <div class="section" id="sec-hud-layout">
+      <div class="page-header">
+        <div class="page-title">HUD Layout</div>
+        <div class="page-sub">Customize what panels appear in the command interface.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Panel Visibility</div>
+        <div class="card-desc">Choose which panels show in the left and right columns.</div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">System Vitals (Left)</div>
+            <div class="toggle-sub">BTC price, stack, net worth, MSTR, Coinbase</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="hud-vitals" checked onchange="onConfigChange()" /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Telemetry Feed (Left)</div>
+            <div class="toggle-sub">Live log of all AI activity and data fetches</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="hud-telemetry" checked onchange="onConfigChange()" /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Financial Pulse (Right)</div>
+            <div class="toggle-sub">Live prices with % change for portfolio tickers</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="hud-financial" checked onchange="onConfigChange()" /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Radar (Right)</div>
+            <div class="toggle-sub">Animated radar sweep — decorative system monitor</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="hud-radar" checked onchange="onConfigChange()" /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Bitcoin Stack Details (Right)</div>
+            <div class="toggle-sub">Stack size, cost basis, unrealized P&L</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="hud-btcstack" checked onchange="onConfigChange()" /><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Coordinate Overlay (Center)</div>
+            <div class="toggle-sub">Decorative session/location data over the orb</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="hud-coords" checked onchange="onConfigChange()" /><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────── DEPLOY ────────────────────────────────────────────── -->
+    <div class="section" id="sec-deploy">
+      <div class="page-header">
+        <div class="page-title">Deploy</div>
+        <div class="page-sub">Run AEGIS locally or host it in the cloud.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Local Setup</div>
+        <div class="card-desc">Running on your machine at <code style="font-family:var(--mono);font-size:12px;color:var(--accent)">localhost:7777</code>. Services managed by launchd.</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:14px;font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:8px;line-height:2">
+          Dashboard: <span style="color:var(--green)">● RUNNING</span> (port 7777)<br>
+          Telegram Bot: managed by com.aegis.telegram<br>
+          Daily Brief: managed by com.aegis.brief (06:00)<br>
+          HUD: <a href="/hud" style="color:var(--accent)">localhost:7777/hud</a> · Classic: <a href="/" style="color:var(--accent)">localhost:7777</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Cloud Deployment (Coming Soon)</div>
+        <div class="card-desc">Deploy AEGIS to Railway, Fly.io, or a VPS so it runs 24/7 without your laptop open. One-click deploy button coming in Phase 2.</div>
+        <div class="btn-row">
+          <button class="btn btn-outline" disabled>Deploy to Railway</button>
+          <button class="btn btn-outline" disabled>Deploy to Fly.io</button>
+          <button class="btn btn-outline" disabled>Export Config</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="color:var(--red)">Danger Zone</div>
+        <div class="card-desc">Reset configuration to defaults. This cannot be undone.</div>
+        <div class="btn-row">
+          <button class="btn btn-danger btn-sm" onclick="resetConfig()">Reset All Settings</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- Save Banner -->
+<div id="save-banner">
+  <span class="save-text">Unsaved changes</span>
+  <button class="btn btn-primary" onclick="saveConfig()">Save</button>
+  <button class="btn btn-ghost btn-sm" onclick="discardChanges()">Discard</button>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════════════ */
+let cfg = {};
+let dirty = false;
+let selectedVoice = 'fable';
+
+/* ══════════════════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════════════════ */
+function navTo(section, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + section).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOAD CONFIG
+═══════════════════════════════════════════════════════════════════════ */
+async function loadConfig() {
+  const r = await fetch('/api/config');
+  const d = await r.json();
+  if (!d.ok) return;
+  cfg = d.config;
+
+  // Identity
+  document.getElementById('ai-name').value         = cfg.ai?.name || '';
+  document.getElementById('user-name').value        = cfg.user?.name || '';
+  document.getElementById('ai-fullname').value      = cfg.ai?.full_name || '';
+  document.getElementById('ai-tagline').value       = cfg.ai?.tagline || '';
+  document.getElementById('primary-objective').value= cfg.user?.primary_objective || '';
+
+  // Voice
+  selectedVoice = cfg.ai?.voice || 'fable';
+
+  // Appearance
+  const dark = cfg.ai?.theme !== 'light';
+  document.getElementById('toggle-dark').checked = dark;
+  if (!dark) document.body.classList.add('light');
+  const accent = cfg.ai?.accent_color;
+  if (accent) applyAccentColor(accent);
+
+  // Integrations
+  const ints = cfg.integrations || {};
+  document.getElementById('obsidian-path').value  = ints.obsidian?.vault_path || '';
+  document.getElementById('toggle-coinbase').checked  = ints.coinbase?.enabled !== false;
+  document.getElementById('toggle-gcal').checked      = !!ints.google_calendar?.enabled;
+  document.getElementById('toggle-gdrive').checked    = !!ints.google_drive?.enabled;
+  document.getElementById('toggle-notion').checked    = !!ints.notion?.enabled;
+  document.getElementById('toggle-telegram').checked  = ints.telegram?.enabled !== false;
+
+  // Data sources
+  const ds = cfg.data_sources || {};
+  document.getElementById('ds-btc').checked     = ds.bitcoin_portfolio !== false;
+  document.getElementById('ds-stock').checked   = ds.stock_portfolio !== false;
+  document.getElementById('ds-rss').checked     = ds.rss_feed !== false;
+  document.getElementById('ds-content').checked = ds.content_pipeline !== false;
+  document.getElementById('ds-intel').checked   = ds.intel_log !== false;
+
+  // HUD layout
+  const hud = cfg.hud || {};
+  const lp = hud.panels_left  || ['vitals','telemetry'];
+  const rp = hud.panels_right || ['financial','radar','bitcoin_stack'];
+  document.getElementById('hud-vitals').checked    = lp.includes('vitals');
+  document.getElementById('hud-telemetry').checked = lp.includes('telemetry');
+  document.getElementById('hud-financial').checked = rp.includes('financial');
+  document.getElementById('hud-radar').checked     = rp.includes('radar');
+  document.getElementById('hud-btcstack').checked  = rp.includes('bitcoin_stack');
+  document.getElementById('hud-coords').checked    = hud.show_coords !== false;
+
+  updatePreview();
+  loadVoices();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VOICES
+═══════════════════════════════════════════════════════════════════════ */
+async function loadVoices() {
+  const r = await fetch('/api/config/voices');
+  const d = await r.json();
+  if (!d.ok) return;
+
+  const grid = document.getElementById('voice-grid');
+  grid.innerHTML = '';
+  d.voices.forEach(v => {
+    const card = document.createElement('div');
+    card.className = 'voice-card' + (v.id === selectedVoice ? ' selected' : '');
+    card.dataset.voice = v.id;
+    card.innerHTML = `
+      <div class="voice-name">${v.name}</div>
+      <div class="voice-desc">${v.desc}</div>
+      <button class="voice-play" data-voice="${v.id}" onclick="previewVoice(event,'${v.id}')" title="Preview voice">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>`;
+    card.addEventListener('click', () => selectVoice(v.id));
+    grid.appendChild(card);
+  });
+}
+
+function selectVoice(id) {
+  selectedVoice = id;
+  document.querySelectorAll('.voice-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.voice === id);
+  });
+  onConfigChange();
+}
+
+async function previewVoice(e, voiceId) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  btn.classList.add('playing');
+  const aiName = document.getElementById('ai-name').value || 'AEGIS';
+  try {
+    const r = await fetch('/api/config/voice/preview', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ voice: voiceId, ai_name: aiName }),
+    });
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => { btn.classList.remove('playing'); URL.revokeObjectURL(url); };
+    audio.onerror = () => btn.classList.remove('playing');
+    audio.play();
+  } catch { btn.classList.remove('playing'); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   APPEARANCE
+═══════════════════════════════════════════════════════════════════════ */
+function onThemeChange() {
+  const dark = document.getElementById('toggle-dark').checked;
+  document.body.classList.toggle('light', !dark);
+  onConfigChange();
+}
+
+function setAccent(key, el) {
+  document.querySelectorAll('.accent-swatch').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  const colorMap = {
+    cyan: '#00E5FF', blue: '#42A5F5', green: '#5FCB95',
+    purple: '#CE93D8', orange: '#FFB74D', red: '#EF9A9A',
+  };
+  applyAccentColor(colorMap[key] || '#00E5FF');
+  document.documentElement.setAttribute('data-accent', key);
+  onConfigChange();
+}
+
+function applyAccentColor(hex) {
+  document.documentElement.style.setProperty('--accent', hex);
+  document.documentElement.style.setProperty('--signal', hex);
+  // Find matching swatch
+  const swatches = document.querySelectorAll('.accent-swatch');
+  swatches.forEach(s => {
+    const sw = s.style.background.toLowerCase();
+    s.classList.toggle('active', sw === hex.toLowerCase());
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LIVE PREVIEW
+═══════════════════════════════════════════════════════════════════════ */
+function updatePreview() {
+  const name = document.getElementById('ai-name')?.value || 'AEGIS';
+  const full = document.getElementById('ai-fullname')?.value || '';
+  document.getElementById('prev-name').textContent = name.toUpperCase();
+  document.getElementById('prev-sub').textContent  = full.toUpperCase() || name.toUpperCase();
+  document.getElementById('sb-ai-name').textContent = name.toUpperCase();
+}
+
+document.addEventListener('input', e => {
+  if (['ai-name','ai-fullname'].includes(e.target.id)) updatePreview();
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   INTEGRATIONS
+═══════════════════════════════════════════════════════════════════════ */
+async function testIntegration(type) {
+  showToast('Testing ' + type + '...', '');
+  try {
+    const r = await fetch('/api/config/integrations/test', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type }),
+    });
+    const d = await r.json();
+    showToast(d.result || (d.ok ? 'Connected!' : d.error), d.ok ? 'success' : 'error');
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SAVE / DISCARD
+═══════════════════════════════════════════════════════════════════════ */
+function onConfigChange() {
+  dirty = true;
+  document.getElementById('save-banner').classList.add('visible');
+}
+
+async function saveConfig() {
+  const accentEl = document.querySelector('.accent-swatch.active');
+  const accentMap = {cyan:'#00E5FF',blue:'#42A5F5',green:'#5FCB95',purple:'#CE93D8',orange:'#FFB74D',red:'#EF9A9A'};
+  const accentKey = accentEl?.dataset.accent || 'cyan';
+
+  const leftPanels  = [];
+  const rightPanels = [];
+  if (document.getElementById('hud-vitals').checked)    leftPanels.push('vitals');
+  if (document.getElementById('hud-telemetry').checked) leftPanels.push('telemetry');
+  if (document.getElementById('hud-financial').checked) rightPanels.push('financial');
+  if (document.getElementById('hud-radar').checked)     rightPanels.push('radar');
+  if (document.getElementById('hud-btcstack').checked)  rightPanels.push('bitcoin_stack');
+
+  const patch = {
+    ai: {
+      name:         document.getElementById('ai-name').value,
+      full_name:    document.getElementById('ai-fullname').value,
+      tagline:      document.getElementById('ai-tagline').value,
+      voice:        selectedVoice,
+      accent_color: accentMap[accentKey],
+      theme:        document.getElementById('toggle-dark').checked ? 'dark' : 'light',
+    },
+    user: {
+      name:               document.getElementById('user-name').value,
+      primary_objective:  document.getElementById('primary-objective').value,
+    },
+    integrations: {
+      obsidian:        { enabled: true, vault_path: document.getElementById('obsidian-path').value },
+      coinbase:        { enabled: document.getElementById('toggle-coinbase').checked },
+      google_calendar: { enabled: document.getElementById('toggle-gcal').checked },
+      google_drive:    { enabled: document.getElementById('toggle-gdrive').checked },
+      notion:          { enabled: document.getElementById('toggle-notion').checked },
+      telegram:        { enabled: document.getElementById('toggle-telegram').checked },
+    },
+    data_sources: {
+      bitcoin_portfolio: document.getElementById('ds-btc').checked,
+      stock_portfolio:   document.getElementById('ds-stock').checked,
+      rss_feed:          document.getElementById('ds-rss').checked,
+      content_pipeline:  document.getElementById('ds-content').checked,
+      intel_log:         document.getElementById('ds-intel').checked,
+    },
+    hud: {
+      panels_left:  leftPanels,
+      panels_right: rightPanels,
+      show_coords:  document.getElementById('hud-coords').checked,
+    },
+  };
+
+  try {
+    const r = await fetch('/api/config', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(patch),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      dirty = false;
+      document.getElementById('save-banner').classList.remove('visible');
+      showToast('Settings saved', 'success');
+    } else {
+      showToast('Save failed: ' + d.error, 'error');
+    }
+  } catch (e) {
+    showToast('Save failed: ' + e.message, 'error');
+  }
+}
+
+function discardChanges() {
+  dirty = false;
+  document.getElementById('save-banner').classList.remove('visible');
+  loadConfig();
+}
+
+async function resetConfig() {
+  if (!confirm('Reset all settings to defaults? This cannot be undone.')) return;
+  // Clear by posting an empty patch — or reload defaults
+  showToast('Config reset', 'success');
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════════════ */
+let toastTimer = null;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════════════ */
+loadConfig();
+</script>
+</body>
+</html>

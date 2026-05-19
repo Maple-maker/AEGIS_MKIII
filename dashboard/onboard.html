@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>AEGIS — Initialization</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:     #00060F;
+  --bg2:    #000B1A;
+  --panel:  rgba(0,14,36,0.9);
+  --border: #0D3A6E;
+  --bh:     #1565C0;
+  --cyan:   #00E5FF;
+  --cyan-d: #29B6F6;
+  --blue:   #1976D2;
+  --blue-l: #42A5F5;
+  --text:   #90CAF9;
+  --text-b: #E3F2FD;
+  --text-d: #546E7A;
+  --green:  #00E676;
+  --yellow: #FFD740;
+  --red:    #FF5252;
+  --mono:   'JetBrains Mono', monospace;
+  --orb:    'Orbitron', sans-serif;
+  --accent: var(--cyan);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  width:100%;min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--mono);
+  font-size:13px;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";
+  position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(21,101,192,0.06) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(21,101,192,0.06) 1px,transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;
+}
+
+/* ── LAYOUT ────────────────────────────────────────────────────── */
+#shell{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-rows:64px 1fr;
+  min-height:100vh;
+}
+
+/* ── TOPBAR ────────────────────────────────────────────────────── */
+#topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;
+  border-bottom:1px solid var(--border);
+  background:rgba(0,14,36,0.95);
+  box-shadow:0 1px 20px rgba(21,101,192,0.2);
+}
+.tb-logo{
+  font-family:var(--orb);font-size:18px;font-weight:700;letter-spacing:4px;
+  color:var(--cyan);text-shadow:0 0 20px rgba(0,229,255,0.5);
+}
+.tb-sub{font-size:9px;letter-spacing:2px;color:var(--text-d);margin-top:2px}
+.tb-step-label{font-family:var(--orb);font-size:9px;letter-spacing:2px;color:var(--text-d)}
+
+/* ── MAIN ──────────────────────────────────────────────────────── */
+#main{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  overflow:hidden;
+}
+
+/* ── SIDEBAR STEPPER ───────────────────────────────────────────── */
+#sidebar{
+  border-right:1px solid var(--border);
+  background:rgba(0,10,25,0.6);
+  padding:40px 0;
+  display:flex;flex-direction:column;gap:0;
+}
+.step-item{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 24px;
+  cursor:pointer;
+  transition:background 120ms;
+  position:relative;
+}
+.step-item:hover{background:rgba(21,101,192,0.08)}
+.step-item.active{background:rgba(0,229,255,0.06)}
+.step-item::after{
+  content:"";
+  position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:transparent;transition:background 200ms;
+}
+.step-item.active::after{background:var(--accent)}
+.step-item.done::after{background:var(--green)}
+
+.step-num{
+  width:26px;height:26px;border-radius:50%;
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--orb);font-size:9px;font-weight:700;
+  color:var(--text-d);flex-shrink:0;
+  transition:all 200ms;
+}
+.step-item.active .step-num{
+  border-color:var(--accent);color:var(--accent);
+  box-shadow:0 0 12px rgba(0,229,255,0.3);
+}
+.step-item.done .step-num{
+  border-color:var(--green);background:rgba(0,230,118,0.15);
+  color:var(--green);
+}
+.step-meta{padding-top:2px}
+.step-title{font-family:var(--orb);font-size:9px;letter-spacing:1.5px;color:var(--text-b)}
+.step-item.active .step-title{color:var(--accent)}
+.step-item.done .step-title{color:var(--green)}
+.step-desc{font-size:9px;color:var(--text-d);margin-top:2px;letter-spacing:0.5px}
+
+.step-connector{
+  height:1px;background:var(--border);margin:0 24px 0 50px;
+}
+
+/* ── CONTENT AREA ──────────────────────────────────────────────── */
+#content{
+  display:flex;flex-direction:column;
+  padding:48px 64px;
+  max-width:800px;
+  width:100%;
+}
+.step-panel{display:none}
+.step-panel.active{display:flex;flex-direction:column;gap:28px;animation:fadeUp 0.3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.panel-title{
+  font-family:var(--orb);font-size:22px;font-weight:700;letter-spacing:2px;
+  color:var(--text-b);
+}
+.panel-sub{font-size:11px;color:var(--text-d);letter-spacing:1px;margin-top:4px;line-height:1.7}
+
+/* ── FORM ELEMENTS ─────────────────────────────────────────────── */
+.field-group{display:flex;flex-direction:column;gap:18px}
+.field{display:flex;flex-direction:column;gap:8px}
+.field label{
+  font-size:9px;letter-spacing:2px;color:var(--cyan-d);font-family:var(--orb);
+}
+.field input,.field select,.field textarea{
+  background:rgba(0,14,36,0.8);
+  border:1px solid var(--border);
+  color:var(--text-b);
+  font-family:var(--mono);font-size:13px;
+  padding:10px 14px;border-radius:4px;
+  outline:none;transition:border-color 150ms,box-shadow 150ms;
+  width:100%;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px rgba(0,229,255,0.2);
+}
+.field input::placeholder{color:var(--text-d)}
+.field select option{background:#000B1A}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* Live preview tag */
+#name-preview{
+  font-family:var(--orb);font-size:28px;font-weight:900;letter-spacing:6px;
+  color:var(--accent);text-shadow:0 0 30px rgba(0,229,255,0.4);
+  margin-top:8px;min-height:40px;transition:color 200ms;
+}
+#name-preview-sub{font-size:10px;letter-spacing:1.5px;color:var(--text-d);margin-top:4px}
+
+/* ── ACCENT COLOR SWATCHES ─────────────────────────────────────── */
+#accent-swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{
+  width:36px;height:36px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:all 150ms;
+  position:relative;
+}
+.swatch.selected::after{
+  content:"✓";position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#fff;font-weight:700;
+}
+.swatch:hover{transform:scale(1.12)}
+
+/* ── VOICE CARDS ───────────────────────────────────────────────── */
+#voice-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.voice-card{
+  border:1px solid var(--border);
+  background:rgba(0,14,36,0.6);
+  padding:14px 16px;border-radius:6px;
+  cursor:pointer;transition:all 150ms;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+}
+.voice-card:hover{border-color:var(--bh);background:rgba(21,101,192,0.08)}
+.voice-card.selected{border-color:var(--accent);background:rgba(0,229,255,0.06);box-shadow:0 0 16px rgba(0,229,255,0.15)}
+.vc-meta{}
+.vc-name{font-family:var(--orb);font-size:11px;font-weight:500;color:var(--text-b);letter-spacing:1px}
+.vc-desc{font-size:9px;color:var(--text-d);margin-top:3px;letter-spacing:0.5px}
+.vc-play{
+  flex-shrink:0;width:30px;height:30px;border-radius:50%;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text-d);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;transition:all 120ms;
+}
+.vc-play:hover{border-color:var(--accent);color:var(--accent)}
+.vc-play.playing{border-color:var(--yellow);color:var(--yellow);animation:pulse-play 0.8s ease infinite}
+@keyframes pulse-play{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
+/* ── HABIT CARDS ───────────────────────────────────────────────── */
+#habit-list{display:flex;flex-direction:column;gap:8px}
+.habit-card{
+  display:flex;align-items:center;gap:12px;
+  border:1px solid var(--border);
+  background:rgba(0,14,36,0.5);
+  padding:10px 14px;border-radius:6px;
+  transition:all 120ms;
+}
+.habit-card.enabled{border-color:rgba(0,229,255,0.25);background:rgba(0,229,255,0.04)}
+.hc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hc-name{flex:1;font-size:11px;color:var(--text-b);letter-spacing:0.5px}
+.hc-name-input{
+  flex:1;background:transparent;border:none;
+  color:var(--text-b);font-family:var(--mono);font-size:11px;
+  outline:none;padding:0;
+}
+.hc-name-input:focus{border-bottom:1px solid var(--accent)}
+.hc-toggle{
+  position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer;
+}
+.hc-toggle input{opacity:0;width:0;height:0;position:absolute}
+.hc-slider{
+  position:absolute;inset:0;background:rgba(21,101,192,0.2);
+  border:1px solid var(--border);border-radius:20px;transition:all 200ms;
+}
+.hc-toggle input:checked + .hc-slider{background:rgba(0,229,255,0.2);border-color:var(--accent)}
+.hc-slider::before{
+  content:"";position:absolute;
+  width:14px;height:14px;border-radius:50%;
+  top:2px;left:2px;background:var(--text-d);
+  transition:transform 200ms,background 200ms;
+}
+.hc-toggle input:checked + .hc-slider::before{
+  transform:translateX(16px);background:var(--accent);
+}
+.add-habit-btn{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;border:1px dashed var(--border);border-radius:6px;
+  background:transparent;color:var(--text-d);
+  font-family:var(--mono);font-size:11px;
+  cursor:pointer;transition:all 120ms;width:100%;letter-spacing:0.5px;
+}
+.add-habit-btn:hover{border-color:var(--bh);color:var(--text)}
+
+/* ── INTEGRATION CARDS ─────────────────────────────────────────── */
+#integration-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.int-card{
+  border:1px solid var(--border);
+  background:rgba(0,14,36,0.6);
+  padding:14px 16px;border-radius:6px;
+  transition:all 150ms;
+}
+.int-card.enabled{border-color:rgba(0,229,255,0.3);background:rgba(0,229,255,0.04)}
+.int-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.int-name{font-family:var(--orb);font-size:10px;letter-spacing:1px;color:var(--text-b)}
+.int-desc{font-size:9px;color:var(--text-d);margin-top:6px;letter-spacing:0.5px;line-height:1.6}
+.int-extra{margin-top:10px;display:none}
+.int-card.enabled .int-extra{display:block}
+.int-extra input{
+  width:100%;background:rgba(0,6,15,0.8);border:1px solid var(--border);
+  color:var(--text);font-family:var(--mono);font-size:10px;
+  padding:6px 10px;border-radius:3px;outline:none;
+}
+.int-extra input:focus{border-color:var(--accent)}
+
+/* ── LAUNCH PANEL ──────────────────────────────────────────────── */
+#launch-preview{
+  border:1px solid var(--border);
+  background:rgba(0,14,36,0.8);
+  border-radius:8px;padding:24px 28px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.lp-ai-name{
+  font-family:var(--orb);font-size:24px;font-weight:900;letter-spacing:4px;
+  color:var(--accent);text-shadow:0 0 20px rgba(0,229,255,0.4);
+}
+.lp-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(13,58,110,0.4)}
+.lp-row:last-child{border-bottom:none}
+.lp-label{font-size:9px;letter-spacing:1.5px;color:var(--text-d)}
+.lp-val{font-size:11px;color:var(--text-b)}
+#launch-btn{
+  margin-top:8px;
+  padding:18px 32px;
+  font-family:var(--orb);font-size:14px;font-weight:700;letter-spacing:3px;
+  color:#000;
+  background:var(--accent);
+  border:none;border-radius:4px;cursor:pointer;
+  box-shadow:0 0 30px rgba(0,229,255,0.4);
+  transition:all 200ms;
+  width:100%;
+}
+#launch-btn:hover{
+  background:#fff;
+  box-shadow:0 0 50px rgba(0,229,255,0.7);
+  transform:scale(1.02);
+}
+#launch-btn:active{transform:scale(0.98)}
+#launch-btn.launching{
+  background:var(--green);
+  box-shadow:0 0 40px rgba(0,230,118,0.5);
+  pointer-events:none;
+}
+
+/* ── NAV BUTTONS ───────────────────────────────────────────────── */
+#nav{
+  margin-top:auto;padding-top:32px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.nav-btn{
+  padding:10px 28px;font-family:var(--orb);font-size:10px;font-weight:500;
+  letter-spacing:2px;border-radius:3px;cursor:pointer;transition:all 150ms;
+  border:1px solid;
+}
+#btn-back{
+  color:var(--text-d);border-color:var(--border);background:transparent;
+}
+#btn-back:hover{color:var(--text);border-color:var(--bh)}
+#btn-back:disabled{opacity:0.3;pointer-events:none}
+#btn-next{
+  color:#000;border-color:var(--accent);background:var(--accent);
+  box-shadow:0 0 16px rgba(0,229,255,0.3);
+}
+#btn-next:hover{background:#fff;box-shadow:0 0 24px rgba(0,229,255,0.5)}
+.step-counter{font-size:9px;letter-spacing:1.5px;color:var(--text-d)}
+
+/* ── PROGRESS BAR ──────────────────────────────────────────────── */
+#progress-bar{
+  height:2px;background:rgba(21,101,192,0.2);
+  position:fixed;top:64px;left:220px;right:0;z-index:10;
+}
+#progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));
+  box-shadow:0 0 8px var(--accent);
+  transition:width 0.4s ease;
+}
+
+/* ── MISC ──────────────────────────────────────────────────────── */
+.tag{
+  display:inline-block;padding:2px 8px;border-radius:2px;
+  font-size:8px;letter-spacing:1.5px;border:1px solid;
+}
+.tag-opt{color:var(--text-d);border-color:var(--border)}
+.tag-req{color:var(--yellow);border-color:var(--yellow);background:rgba(255,215,64,0.08)}
+hr{border:none;border-top:1px solid var(--border);margin:4px 0}
+</style>
+</head>
+<body>
+<div id="shell">
+
+  <!-- TOPBAR -->
+  <header id="topbar">
+    <div>
+      <div class="tb-logo" id="tb-logo">A.E.G.I.S.</div>
+      <div class="tb-sub">INITIALIZATION SEQUENCE</div>
+    </div>
+    <div class="tb-step-label" id="tb-step-label">STEP 1 OF 5</div>
+  </header>
+
+  <!-- PROGRESS BAR -->
+  <div id="progress-bar"><div id="progress-fill" style="width:20%"></div></div>
+
+  <div id="main">
+
+    <!-- SIDEBAR STEPPER -->
+    <aside id="sidebar">
+      <div class="step-item active" data-step="1">
+        <div class="step-num">01</div>
+        <div class="step-meta">
+          <div class="step-title">AI IDENTITY</div>
+          <div class="step-desc">Name and persona</div>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="2">
+        <div class="step-num">02</div>
+        <div class="step-meta">
+          <div class="step-title">ABOUT YOU</div>
+          <div class="step-desc">User profile & objective</div>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="3">
+        <div class="step-num">03</div>
+        <div class="step-meta">
+          <div class="step-title">VOICE</div>
+          <div class="step-desc">Select a voice model</div>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="4">
+        <div class="step-num">04</div>
+        <div class="step-meta">
+          <div class="step-title">DAILY HABITS</div>
+          <div class="step-desc">Track what matters</div>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="5">
+        <div class="step-num">05</div>
+        <div class="step-meta">
+          <div class="step-title">CONNECT & LAUNCH</div>
+          <div class="step-desc">Integrations & go live</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- STEP CONTENT -->
+    <section id="content">
+
+      <!-- STEP 1: AI IDENTITY -->
+      <div class="step-panel active" id="panel-1">
+        <div>
+          <div class="panel-title">NAME YOUR AI</div>
+          <div class="panel-sub">Give your intelligence system an identity. This name will appear throughout your dashboard and in every spoken response.</div>
+        </div>
+        <div class="field-group">
+          <div class="field">
+            <label>AI NAME</label>
+            <input id="ai-name" type="text" placeholder="AEGIS" maxlength="20" autocomplete="off"/>
+            <div id="name-preview">AEGIS</div>
+            <div id="name-preview-sub">ADAPTIVE EXECUTIVE GUARDIAN INTELLIGENCE SYSTEM</div>
+          </div>
+          <div class="field">
+            <label>FULL NAME / ACRONYM MEANING <span class="tag tag-opt">OPTIONAL</span></label>
+            <input id="ai-fullname" type="text" placeholder="Adaptive Executive Guardian Intelligence System" autocomplete="off"/>
+          </div>
+          <div class="field">
+            <label>ACCENT COLOR</label>
+            <div id="accent-swatches">
+              <div class="swatch selected" data-color="#00E5FF" style="background:#00E5FF" title="Cyan"></div>
+              <div class="swatch" data-color="#1976D2" style="background:#1976D2" title="Blue"></div>
+              <div class="swatch" data-color="#00E676" style="background:#00E676" title="Green"></div>
+              <div class="swatch" data-color="#AB47BC" style="background:#AB47BC" title="Purple"></div>
+              <div class="swatch" data-color="#FF6F00" style="background:#FF6F00" title="Amber"></div>
+              <div class="swatch" data-color="#F7931A" style="background:#F7931A" title="Bitcoin Orange"></div>
+              <div class="swatch" data-color="#FF5252" style="background:#FF5252" title="Red"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>THEME</label>
+            <select id="ai-theme">
+              <option value="dark">DARK — Command Interface (Default)</option>
+              <option value="light">LIGHT — Clean Workspace</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: ABOUT YOU -->
+      <div class="step-panel" id="panel-2">
+        <div>
+          <div class="panel-title">ABOUT YOU</div>
+          <div class="panel-sub">Your AI adapts its briefings, priorities, and tone around your profile and mission.</div>
+        </div>
+        <div class="field-group">
+          <div class="field-row">
+            <div class="field">
+              <label>YOUR NAME</label>
+              <input id="user-name" type="text" placeholder="Jaiden" autocomplete="off"/>
+            </div>
+            <div class="field">
+              <label>TIMEZONE</label>
+              <select id="user-tz">
+                <option value="America/New_York">Eastern (UTC-5)</option>
+                <option value="America/Chicago">Central (UTC-6)</option>
+                <option value="America/Denver">Mountain (UTC-7)</option>
+                <option value="America/Los_Angeles">Pacific (UTC-8)</option>
+                <option value="America/Anchorage">Alaska (UTC-9)</option>
+                <option value="Pacific/Honolulu">Hawaii (UTC-10)</option>
+                <option value="Europe/London">London (UTC+0)</option>
+                <option value="Europe/Berlin">Berlin (UTC+1)</option>
+                <option value="Asia/Dubai">Dubai (UTC+4)</option>
+                <option value="Asia/Tokyo">Tokyo (UTC+9)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>PRIMARY OBJECTIVE</label>
+            <input id="user-obj" type="text" placeholder="Stack 1 BTC · Achieve Financial Independence" autocomplete="off"/>
+            <div style="font-size:9px;color:var(--text-d);margin-top:4px">This appears at the top of your HUD as a constant north star reminder.</div>
+          </div>
+          <div class="field">
+            <label>LIFE DOMAINS TO TRACK <span class="tag tag-opt">OPTIONAL</span></label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="domain-tags">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:var(--text)">
+                <input type="checkbox" checked data-domain="finance" style="accent-color:var(--cyan)"/> Finance & Wealth
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:var(--text)">
+                <input type="checkbox" checked data-domain="health" style="accent-color:var(--cyan)"/> Health & Fitness
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:var(--text)">
+                <input type="checkbox" data-domain="military" style="accent-color:var(--cyan)"/> Military / Career
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:var(--text)">
+                <input type="checkbox" data-domain="content" style="accent-color:var(--cyan)"/> Content Creation
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:var(--text)">
+                <input type="checkbox" data-domain="faith" style="accent-color:var(--cyan)"/> Faith & Spirituality
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:var(--text)">
+                <input type="checkbox" data-domain="business" style="accent-color:var(--cyan)"/> Business / Entrepreneurship
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: VOICE -->
+      <div class="step-panel" id="panel-3">
+        <div>
+          <div class="panel-title">SELECT A VOICE</div>
+          <div class="panel-sub">Your AI will speak every response through this voice. Click ▶ to preview before selecting.</div>
+        </div>
+        <div id="voice-cards">
+          <div class="voice-card selected" data-voice="fable">
+            <div class="vc-meta">
+              <div class="vc-name">FABLE</div>
+              <div class="vc-desc">British · Warm baritone · JARVIS-inspired</div>
+            </div>
+            <button class="vc-play" onclick="previewVoice('fable',this)">▶</button>
+          </div>
+          <div class="voice-card" data-voice="onyx">
+            <div class="vc-meta">
+              <div class="vc-name">ONYX</div>
+              <div class="vc-desc">Deep · Authoritative · American male</div>
+            </div>
+            <button class="vc-play" onclick="previewVoice('onyx',this)">▶</button>
+          </div>
+          <div class="voice-card" data-voice="echo">
+            <div class="vc-meta">
+              <div class="vc-name">ECHO</div>
+              <div class="vc-desc">Neutral · Clear · American male</div>
+            </div>
+            <button class="vc-play" onclick="previewVoice('echo',this)">▶</button>
+          </div>
+          <div class="voice-card" data-voice="nova">
+            <div class="vc-meta">
+              <div class="vc-name">NOVA</div>
+              <div class="vc-desc">Warm · Confident · American female</div>
+            </div>
+            <button class="vc-play" onclick="previewVoice('nova',this)">▶</button>
+          </div>
+          <div class="voice-card" data-voice="shimmer">
+            <div class="vc-meta">
+              <div class="vc-name">SHIMMER</div>
+              <div class="vc-desc">Bright · Articulate · Female</div>
+            </div>
+            <button class="vc-play" onclick="previewVoice('shimmer',this)">▶</button>
+          </div>
+          <div class="voice-card" data-voice="alloy">
+            <div class="vc-meta">
+              <div class="vc-name">ALLOY</div>
+              <div class="vc-desc">Balanced · Professional · Neutral</div>
+            </div>
+            <button class="vc-play" onclick="previewVoice('alloy',this)">▶</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: HABITS -->
+      <div class="step-panel" id="panel-4">
+        <div>
+          <div class="panel-title">DAILY HABITS</div>
+          <div class="panel-sub">Your AI tracks these every day and visualizes completion on your dashboard. Toggle off anything that doesn't apply, or add your own.</div>
+        </div>
+        <div id="habit-list">
+          <div class="habit-card enabled" data-id="morning-pt">
+            <div class="hc-dot" style="background:#66BB6A"></div>
+            <input class="hc-name-input" value="Morning PT" data-field="name"/>
+            <label class="hc-toggle"><input type="checkbox" checked/><div class="hc-slider"></div></label>
+          </div>
+          <div class="habit-card enabled" data-id="bible">
+            <div class="hc-dot" style="background:#AB47BC"></div>
+            <input class="hc-name-input" value="Bible / Prayer" data-field="name"/>
+            <label class="hc-toggle"><input type="checkbox" checked/><div class="hc-slider"></div></label>
+          </div>
+          <div class="habit-card enabled" data-id="btc-dca">
+            <div class="hc-dot" style="background:#F7931A"></div>
+            <input class="hc-name-input" value="BTC Stack" data-field="name"/>
+            <label class="hc-toggle"><input type="checkbox" checked/><div class="hc-slider"></div></label>
+          </div>
+          <div class="habit-card enabled" data-id="content">
+            <div class="hc-dot" style="background:#42A5F5"></div>
+            <input class="hc-name-input" value="Content Work" data-field="name"/>
+            <label class="hc-toggle"><input type="checkbox" checked/><div class="hc-slider"></div></label>
+          </div>
+          <div class="habit-card enabled" data-id="no-junk">
+            <div class="hc-dot" style="background:#26C6DA"></div>
+            <input class="hc-name-input" value="Clean Eating" data-field="name"/>
+            <label class="hc-toggle"><input type="checkbox" checked/><div class="hc-slider"></div></label>
+          </div>
+        </div>
+        <button class="add-habit-btn" id="add-habit-btn">+ ADD CUSTOM HABIT</button>
+      </div>
+
+      <!-- STEP 5: CONNECT & LAUNCH -->
+      <div class="step-panel" id="panel-5">
+        <div>
+          <div class="panel-title">CONNECT & LAUNCH</div>
+          <div class="panel-sub">All integrations are optional. Connect what's relevant now — you can change this anytime in Settings.</div>
+        </div>
+        <div id="integration-cards">
+          <div class="int-card" data-int="obsidian">
+            <div class="int-header">
+              <span class="int-name">OBSIDIAN VAULT</span>
+              <label class="hc-toggle"><input type="checkbox" id="int-obsidian"/><div class="hc-slider"></div></label>
+            </div>
+            <div class="int-desc">Connect your vault for voice notes, knowledge graph visualization, and AI-powered context.</div>
+            <div class="int-extra">
+              <input type="text" id="int-obsidian-path" placeholder="/Users/you/Documents/vault" />
+            </div>
+          </div>
+          <div class="int-card" data-int="coinbase">
+            <div class="int-header">
+              <span class="int-name">COINBASE</span>
+              <label class="hc-toggle"><input type="checkbox" id="int-coinbase"/><div class="hc-slider"></div></label>
+            </div>
+            <div class="int-desc">Live BTC portfolio tracking, stack value, unrealized P/L, and goal progress.</div>
+            <div class="int-extra" style="font-size:9px;color:var(--text-d)">Reads via API key (read-only). Set in your .env file.</div>
+          </div>
+          <div class="int-card" data-int="telegram">
+            <div class="int-header">
+              <span class="int-name">TELEGRAM BOT</span>
+              <label class="hc-toggle"><input type="checkbox" id="int-telegram"/><div class="hc-slider"></div></label>
+            </div>
+            <div class="int-desc">Send voice memos and messages to your AI from your phone. Responses delivered instantly.</div>
+            <div class="int-extra" style="font-size:9px;color:var(--text-d)">Requires TELEGRAM_TOKEN in .env file.</div>
+          </div>
+          <div class="int-card" data-int="gcal">
+            <div class="int-header">
+              <span class="int-name">GOOGLE CALENDAR</span>
+              <label class="hc-toggle"><input type="checkbox" id="int-gcal"/><div class="hc-slider"></div></label>
+            </div>
+            <div class="int-desc">Show today's schedule on your HUD. Brief your AI on upcoming events.</div>
+            <div class="int-extra" style="font-size:9px;color:var(--text-d)">OAuth setup required. See docs.</div>
+          </div>
+        </div>
+
+        <div id="launch-preview">
+          <div class="lp-ai-name" id="lp-name">AEGIS</div>
+          <div class="lp-row"><span class="lp-label">USER</span><span class="lp-val" id="lp-user">—</span></div>
+          <div class="lp-row"><span class="lp-label">OBJECTIVE</span><span class="lp-val" id="lp-obj" style="font-size:10px;max-width:340px;text-align:right">—</span></div>
+          <div class="lp-row"><span class="lp-label">VOICE</span><span class="lp-val" id="lp-voice">FABLE</span></div>
+          <div class="lp-row"><span class="lp-label">HABITS</span><span class="lp-val" id="lp-habits">—</span></div>
+          <div class="lp-row"><span class="lp-label">INTEGRATIONS</span><span class="lp-val" id="lp-integrations">—</span></div>
+        </div>
+
+        <button id="launch-btn" onclick="launch()">⬡ &nbsp;INITIALIZE &nbsp;AEGIS</button>
+      </div>
+
+      <!-- NAV -->
+      <div id="nav">
+        <button class="nav-btn" id="btn-back" disabled onclick="prevStep()">← BACK</button>
+        <span class="step-counter" id="step-counter">STEP 1 OF 5</span>
+        <button class="nav-btn" id="btn-next" onclick="nextStep()">NEXT →</button>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+<script>
+/* ── STATE ──────────────────────────────────────────────────────── */
+let currentStep = 1;
+const TOTAL = 5;
+let selectedVoice   = 'fable';
+let selectedAccent  = '#00E5FF';
+let currentAudio    = null;
+
+/* ── STEP NAVIGATION ────────────────────────────────────────────── */
+function goToStep(n) {
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${n}`).classList.add('active');
+
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.toggle('active', s === n);
+    el.classList.toggle('done',   s < n);
+  });
+
+  document.getElementById('progress-fill').style.width = (n / TOTAL * 100) + '%';
+  document.getElementById('tb-step-label').textContent  = `STEP ${n} OF ${TOTAL}`;
+  document.getElementById('step-counter').textContent   = `STEP ${n} OF ${TOTAL}`;
+  document.getElementById('btn-back').disabled = n === 1;
+  document.getElementById('btn-next').style.display = n === TOTAL ? 'none' : '';
+
+  if (n === TOTAL) updateLaunchPreview();
+  currentStep = n;
+}
+
+function nextStep() { if (currentStep < TOTAL) goToStep(currentStep + 1); }
+function prevStep() { if (currentStep > 1)     goToStep(currentStep - 1); }
+
+document.querySelectorAll('.step-item').forEach(el => {
+  el.addEventListener('click', () => {
+    const s = parseInt(el.dataset.step);
+    if (s <= currentStep || el.classList.contains('done')) goToStep(s);
+  });
+});
+
+/* ── LIVE NAME PREVIEW ──────────────────────────────────────────── */
+document.getElementById('ai-name').addEventListener('input', function() {
+  const v = this.value.trim().toUpperCase() || 'AEGIS';
+  document.getElementById('name-preview').textContent = v;
+  document.getElementById('tb-logo').textContent = v;
+});
+
+document.getElementById('ai-fullname').addEventListener('input', function() {
+  document.getElementById('name-preview-sub').textContent = this.value.toUpperCase() ||
+    'ADAPTIVE EXECUTIVE GUARDIAN INTELLIGENCE SYSTEM';
+});
+
+/* ── ACCENT SWATCHES ────────────────────────────────────────────── */
+document.querySelectorAll('.swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+    sw.classList.add('selected');
+    selectedAccent = sw.dataset.color;
+    document.documentElement.style.setProperty('--accent', selectedAccent);
+    document.getElementById('name-preview').style.color = selectedAccent;
+    document.getElementById('name-preview').style.textShadow = `0 0 30px ${selectedAccent}66`;
+  });
+});
+
+/* ── VOICE CARDS ────────────────────────────────────────────────── */
+document.querySelectorAll('.voice-card').forEach(card => {
+  card.addEventListener('click', function(e) {
+    if (e.target.classList.contains('vc-play') || e.target.closest('.vc-play')) return;
+    document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('selected'));
+    this.classList.add('selected');
+    selectedVoice = this.dataset.voice;
+  });
+});
+
+async function previewVoice(voice, btn) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  document.querySelectorAll('.vc-play').forEach(b => { b.classList.remove('playing'); b.textContent = '▶'; });
+
+  const aiName = document.getElementById('ai-name').value.trim() || 'AEGIS';
+  btn.classList.add('playing'); btn.textContent = '◼';
+
+  try {
+    const resp = await fetch('/api/config/voice/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ voice, ai_name: aiName }),
+    });
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    currentAudio = new Audio(url);
+    currentAudio.onended = () => { btn.classList.remove('playing'); btn.textContent = '▶'; };
+    currentAudio.onerror = () => { btn.classList.remove('playing'); btn.textContent = '▶'; };
+    await currentAudio.play();
+
+    document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('selected'));
+    btn.closest('.voice-card').classList.add('selected');
+    selectedVoice = voice;
+  } catch {
+    btn.classList.remove('playing'); btn.textContent = '▶';
+  }
+}
+
+/* ── HABIT TOGGLES ──────────────────────────────────────────────── */
+document.querySelectorAll('.habit-card .hc-toggle input').forEach(toggle => {
+  toggle.addEventListener('change', function() {
+    this.closest('.habit-card').classList.toggle('enabled', this.checked);
+  });
+});
+
+const HABIT_COLORS = ['#EF5350','#29B6F6','#A5D6A7','#CE93D8','#FFB74D','#80CBC4','#F48FB1'];
+let colorIdx = 0;
+
+document.getElementById('add-habit-btn').addEventListener('click', () => {
+  const color = HABIT_COLORS[colorIdx++ % HABIT_COLORS.length];
+  const id    = 'custom-' + Date.now();
+  const card  = document.createElement('div');
+  card.className = 'habit-card enabled';
+  card.dataset.id = id;
+  card.style.animation = 'fadeUp 0.25s ease';
+  card.innerHTML = `
+    <div class="hc-dot" style="background:${color}"></div>
+    <input class="hc-name-input" value="New Habit" data-field="name" style="color:var(--cyan)"/>
+    <label class="hc-toggle"><input type="checkbox" checked/><div class="hc-slider"></div></label>
+  `;
+  card.querySelector('.hc-toggle input').addEventListener('change', function() {
+    this.closest('.habit-card').classList.toggle('enabled', this.checked);
+  });
+  const list = document.getElementById('habit-list');
+  list.insertBefore(card, document.getElementById('add-habit-btn'));
+  card.querySelector('.hc-name-input').focus();
+  card.querySelector('.hc-name-input').select();
+});
+
+/* ── INTEGRATION TOGGLES ────────────────────────────────────────── */
+document.querySelectorAll('.int-card .hc-toggle input').forEach(toggle => {
+  toggle.addEventListener('change', function() {
+    this.closest('.int-card').classList.toggle('enabled', this.checked);
+  });
+});
+
+/* ── LAUNCH PREVIEW ─────────────────────────────────────────────── */
+function updateLaunchPreview() {
+  const name   = (document.getElementById('ai-name').value.trim() || 'AEGIS').toUpperCase();
+  const user   = document.getElementById('user-name').value.trim() || '—';
+  const obj    = document.getElementById('user-obj').value.trim() || '—';
+  const habits = [...document.querySelectorAll('.habit-card.enabled .hc-name-input')]
+                   .map(i => i.value.trim()).filter(Boolean).join(' · ');
+  const integs = ['obsidian','coinbase','telegram','gcal']
+                   .filter(id => document.getElementById(`int-${id}`)?.checked)
+                   .map(id => id.toUpperCase()).join(', ') || 'NONE';
+
+  document.getElementById('lp-name').textContent = name;
+  document.getElementById('lp-name').style.color = selectedAccent;
+  document.getElementById('lp-user').textContent  = user.toUpperCase();
+  document.getElementById('lp-obj').textContent   = obj.toUpperCase();
+  document.getElementById('lp-voice').textContent = selectedVoice.toUpperCase();
+  document.getElementById('lp-habits').textContent = habits || '—';
+  document.getElementById('lp-integrations').textContent = integs;
+}
+
+/* ── LAUNCH ─────────────────────────────────────────────────────── */
+async function launch() {
+  const btn = document.getElementById('launch-btn');
+  btn.textContent = 'INITIALIZING...';
+  btn.classList.add('launching');
+
+  // Build habits payload
+  const habitCards = [...document.querySelectorAll('#habit-list .habit-card')];
+  const COLORS = {
+    'morning-pt': '#66BB6A', 'bible': '#AB47BC', 'btc-dca': '#F7931A',
+    'content': '#42A5F5', 'no-junk': '#26C6DA',
+  };
+  const habits = habitCards
+    .filter(c => c.querySelector('.hc-toggle input')?.checked)
+    .map((c, i) => ({
+      id: c.dataset.id,
+      name: c.querySelector('.hc-name-input').value.trim() || 'Habit',
+      color: COLORS[c.dataset.id] || HABIT_COLORS[i % HABIT_COLORS.length],
+      frequency: 'daily',
+    }));
+
+  // Build integrations payload
+  const integrations = {
+    obsidian: {
+      enabled: document.getElementById('int-obsidian').checked,
+      vault_path: document.getElementById('int-obsidian-path')?.value.trim() || '',
+    },
+    coinbase:  { enabled: document.getElementById('int-coinbase').checked },
+    telegram:  { enabled: document.getElementById('int-telegram').checked },
+    google_calendar: { enabled: document.getElementById('int-gcal').checked },
+  };
+
+  const domains = [...document.querySelectorAll('#domain-tags input:checked')]
+    .map(c => c.dataset.domain);
+
+  // Save config
+  const config = {
+    ai: {
+      name: document.getElementById('ai-name').value.trim() || 'AEGIS',
+      full_name: document.getElementById('ai-fullname').value.trim() || 'Adaptive Executive Guardian Intelligence System',
+      voice: selectedVoice,
+      accent_color: selectedAccent,
+      theme: document.getElementById('ai-theme').value,
+    },
+    user: {
+      name: document.getElementById('user-name').value.trim() || 'User',
+      timezone: document.getElementById('user-tz').value,
+      primary_objective: document.getElementById('user-obj').value.trim(),
+      life_domains: domains,
+    },
+    integrations,
+    onboarding: { completed: true, completed_at: new Date().toISOString() },
+  };
+
+  try {
+    await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+
+    // Save habits
+    const existingHabits = await fetch('/api/habits').then(r => r.json()).catch(() => ({}));
+    const habitsPayload  = { habits, log: existingHabits?.log || {} };
+    await fetch('/api/habits/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(habitsPayload),
+    });
+  } catch { /* config save best-effort */ }
+
+  btn.textContent = '✓ ONLINE — LAUNCHING DASHBOARD';
+  setTimeout(() => { window.location.href = '/hud'; }, 1200);
+}
+
+/* ── LOAD EXISTING CONFIG ───────────────────────────────────────── */
+(async () => {
+  try {
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    if (!d.ok) return;
+    const c = d.config;
+    if (c.ai?.name) {
+      document.getElementById('ai-name').value    = c.ai.name;
+      document.getElementById('name-preview').textContent = c.ai.name.toUpperCase();
+      document.getElementById('tb-logo').textContent = c.ai.name.toUpperCase();
+    }
+    if (c.ai?.full_name) document.getElementById('ai-fullname').value = c.ai.full_name;
+    if (c.ai?.accent_color) {
+      selectedAccent = c.ai.accent_color;
+      document.documentElement.style.setProperty('--accent', selectedAccent);
+      document.querySelectorAll('.swatch').forEach(sw => {
+        sw.classList.toggle('selected', sw.dataset.color === selectedAccent);
+      });
+    }
+    if (c.ai?.theme) document.getElementById('ai-theme').value = c.ai.theme;
+    if (c.ai?.voice) {
+      selectedVoice = c.ai.voice;
+      document.querySelectorAll('.voice-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.voice === selectedVoice);
+      });
+    }
+    if (c.user?.name) document.getElementById('user-name').value = c.user.name;
+    if (c.user?.timezone) document.getElementById('user-tz').value = c.user.timezone;
+    if (c.user?.primary_objective) document.getElementById('user-obj').value = c.user.primary_objective;
+  } catch { /* use defaults */ }
+})();
+</script>
+</body>
+</html>

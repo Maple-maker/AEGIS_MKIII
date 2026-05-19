@@ -1,0 +1,1251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>A.E.G.I.S. — Command Interface</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<style>
+:root {
+  --bg:       #00060F;
+  --bg2:      #000B1A;
+  --panel:    rgba(0, 14, 36, 0.85);
+  --border:   #0D3A6E;
+  --border-h: #1565C0;
+  --glow:     rgba(21, 101, 192, 0.4);
+  --glow-h:   rgba(0, 229, 255, 0.3);
+  --blue:     #1976D2;
+  --blue-l:   #42A5F5;
+  --cyan:     #00E5FF;
+  --cyan-d:   #29B6F6;
+  --text:     #90CAF9;
+  --text-b:   #E3F2FD;
+  --text-d:   #546E7A;
+  --green:    #00E676;
+  --yellow:   #FFD740;
+  --red:      #FF5252;
+  --mono:     'JetBrains Mono', ui-monospace, monospace;
+  --orb:      'Orbitron', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRID BACKGROUND ───────────────────────────────────────────────── */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(21,101,192,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(21,101,192,0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+/* Corner scan-line vignette */
+body::after {
+  content: "";
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,6,15,0.7) 100%);
+  pointer-events: none;
+}
+
+/* ── HUD SHELL ─────────────────────────────────────────────────────── */
+#hud {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-rows: 56px 1fr 90px;
+  grid-template-columns: 1fr;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ── TOP BAR ───────────────────────────────────────────────────────── */
+#topbar {
+  display: grid;
+  grid-template-columns: 340px 1fr 340px;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(0,14,36,0.95) 0%, rgba(0,6,15,0.7) 100%);
+  box-shadow: 0 1px 20px rgba(21,101,192,0.2);
+}
+.tb-name {
+  font-family: var(--orb);
+  font-size: 16px; font-weight: 700; letter-spacing: 4px;
+  color: var(--cyan);
+  text-shadow: 0 0 20px rgba(0,229,255,0.6);
+}
+.tb-sub {
+  font-size: 9px; letter-spacing: 2px;
+  color: var(--text-d); margin-top: 2px;
+}
+.tb-center {
+  text-align: center;
+}
+.tb-obj-label {
+  font-size: 9px; letter-spacing: 3px; color: var(--text-d);
+}
+.tb-obj-text {
+  font-family: var(--orb); font-size: 11px; font-weight: 500;
+  color: var(--text-b); letter-spacing: 2px;
+  text-shadow: 0 0 12px rgba(255,255,255,0.2);
+}
+.tb-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.tb-pills { display: flex; gap: 6px; }
+.pill {
+  font-size: 8px; letter-spacing: 1.5px; padding: 2px 7px; border-radius: 2px;
+  border: 1px solid;
+}
+.pill-on  { color: var(--green);  border-color: var(--green);  background: rgba(0,230,118,0.08); }
+.pill-sec { color: var(--cyan-d); border-color: var(--cyan-d); background: rgba(41,182,246,0.08); }
+.pill-enc { color: var(--blue-l); border-color: var(--blue-l); background: rgba(66,165,245,0.08); }
+.pill-aut { color: var(--yellow); border-color: var(--yellow); background: rgba(255,215,64,0.08); }
+#clock {
+  font-family: var(--orb); font-size: 18px; font-weight: 400;
+  color: var(--text-b);
+  letter-spacing: 2px;
+  text-shadow: 0 0 15px rgba(227,242,253,0.4);
+}
+#dateline { font-size: 9px; letter-spacing: 2px; color: var(--text-d); }
+
+/* ── MAIN GRID ─────────────────────────────────────────────────────── */
+#main {
+  display: grid;
+  grid-template-columns: 260px 1fr 260px;
+  overflow: hidden;
+}
+
+/* ── PANELS ────────────────────────────────────────────────────────── */
+.panel {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+#left-panel  { border-left: none; border-top: none; border-bottom: none; }
+#right-panel { border-right: none; border-top: none; border-bottom: none; }
+
+.ph {
+  font-family: var(--orb); font-size: 9px; letter-spacing: 2.5px;
+  color: var(--cyan-d);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+  flex-shrink: 0;
+}
+.ph::before {
+  content: "◈"; font-size: 8px;
+  color: var(--cyan); text-shadow: 0 0 8px var(--cyan);
+}
+
+/* ── VITALS ────────────────────────────────────────────────────────── */
+#vitals { padding: 8px 12px; flex-shrink: 0; }
+.vrow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(13,58,110,0.4);
+}
+.vrow:last-child { border-bottom: none; }
+.vlabel { font-size: 9px; letter-spacing: 1.5px; color: var(--text-d); }
+.vval   { font-size: 11px; color: var(--text-b); font-weight: 500; }
+.vbar {
+  height: 2px; background: rgba(21,101,192,0.3); border-radius: 1px;
+  margin-top: 3px; overflow: hidden;
+}
+.vbar-fill { height: 100%; background: var(--blue-l); border-radius: 1px; transition: width 0.5s; }
+
+/* ── TELEMETRY ─────────────────────────────────────────────────────── */
+#telemetry-wrap {
+  flex: 1; overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+}
+#telemetry {
+  flex: 1; overflow-y: auto; padding: 8px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+#telemetry::-webkit-scrollbar { width: 3px; }
+#telemetry::-webkit-scrollbar-track { background: transparent; }
+#telemetry::-webkit-scrollbar-thumb { background: var(--border-h); border-radius: 2px; }
+.trow { display: flex; gap: 6px; line-height: 1.6; }
+.ttime { color: var(--text-d); flex-shrink: 0; font-size: 9px; }
+.tprefix { color: var(--cyan); flex-shrink: 0; }
+.tmsg { color: var(--text); font-size: 10px; }
+.tmsg.user   { color: var(--text-b); }
+.tmsg.aegis  { color: var(--cyan-d); }
+.tmsg.system { color: var(--text-d); }
+.tmsg.warn   { color: var(--yellow); }
+.trow.new { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+/* ── CENTER ────────────────────────────────────────────────────────── */
+#center {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+#orb-canvas {
+  display: block;
+  width: 440px; height: 440px;
+}
+/* Outer dotted ring behind orb */
+#center::before {
+  content: "";
+  position: absolute;
+  width: 480px; height: 480px;
+  border-radius: 50%;
+  border: 1px dashed rgba(21,101,192,0.35);
+  animation: spin 40s linear infinite;
+}
+#center::after {
+  content: "";
+  position: absolute;
+  width: 520px; height: 520px;
+  border-radius: 50%;
+  border: 1px dashed rgba(21,101,192,0.15);
+  animation: spin 60s linear infinite reverse;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Primary objective panel */
+#obj-panel {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  width: 320px;
+  border: 1px solid var(--border-h);
+  background: rgba(0,10,25,0.9);
+  box-shadow: 0 0 20px rgba(21,101,192,0.3), inset 0 0 30px rgba(0,0,0,0.5);
+  padding: 10px 14px;
+}
+.obj-header {
+  display: flex; justify-content: space-between;
+  font-family: var(--orb); font-size: 8px; letter-spacing: 2px;
+  color: var(--text-d); margin-bottom: 6px;
+}
+.obj-goal-val {
+  font-family: var(--orb); font-size: 22px; font-weight: 700;
+  color: var(--text-b);
+  text-shadow: 0 0 20px rgba(227,242,253,0.4);
+  letter-spacing: 2px;
+}
+.obj-progress {
+  height: 4px; background: rgba(21,101,192,0.2); border-radius: 2px;
+  margin: 6px 0; overflow: hidden;
+}
+.obj-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--cyan);
+  transition: width 1s ease;
+}
+.obj-stats {
+  display: flex; justify-content: space-between;
+  font-size: 9px; color: var(--text-d); letter-spacing: 1px;
+}
+.obj-current { color: var(--cyan-d); }
+.obj-target  { color: var(--text-d); }
+
+/* Top coordinates overlay */
+#coords {
+  position: absolute; top: 8px; right: 8px;
+  font-size: 9px; letter-spacing: 1px; color: var(--text-d);
+  text-align: right; line-height: 1.8;
+}
+
+/* ── RIGHT PANEL CONTENT ───────────────────────────────────────────── */
+#financial { padding: 8px 12px; flex-shrink: 0; }
+.frow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid rgba(13,58,110,0.4);
+}
+.frow:last-child { border-bottom: none; }
+.fticker { font-size: 10px; font-weight: 500; color: var(--text); letter-spacing: 1px; }
+.fprice  { font-size: 11px; color: var(--text-b); }
+.fchg    { font-size: 9px; }
+.fchg.pos { color: var(--green); }
+.fchg.neg { color: var(--red); }
+
+/* Habit rings canvas */
+#habit-canvas { display: block; flex-shrink: 0; }
+#habit-btns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  padding: 6px 10px; flex-shrink: 0;
+}
+.hbt {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 8px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border); background: transparent;
+  font-family: var(--mono); font-size: 9px; color: var(--text-d);
+  letter-spacing: 0.5px; transition: all 120ms;
+}
+.hbt.done { border-color: currentColor; }
+.hbt .hbt-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.hbt .hbt-check { margin-left: auto; font-size: 10px; opacity: 0; }
+.hbt.done .hbt-check { opacity: 1; }
+
+/* Stack section */
+#stack-info { padding: 8px 12px; flex-shrink: 0; }
+.srow {
+  display: flex; justify-content: space-between;
+  padding: 4px 0; border-bottom: 1px solid rgba(13,58,110,0.3);
+  font-size: 10px;
+}
+.srow:last-child { border-bottom: none; }
+.slabel { color: var(--text-d); font-size: 9px; letter-spacing: 1px; }
+.sval   { color: var(--text-b); }
+
+/* Voice status in right panel */
+#voice-section { padding: 8px 12px; }
+#last-query  { color: var(--text-d); font-size: 9px; line-height: 1.6; margin-top: 4px; }
+#last-response { color: var(--cyan-d); font-size: 9px; line-height: 1.6; margin-top: 4px; }
+
+/* ── BOTTOM BAR ────────────────────────────────────────────────────── */
+#bottombar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 24px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(0deg, rgba(0,14,36,0.95) 0%, rgba(0,6,15,0.6) 100%);
+  box-shadow: 0 -1px 20px rgba(21,101,192,0.15);
+  gap: 20px;
+}
+.bb-status-items { display: flex; gap: 24px; }
+.bb-stat { font-size: 9px; letter-spacing: 1px; color: var(--text-d); }
+.bb-stat span { color: var(--text); margin-left: 4px; }
+
+/* Mic button */
+#mic-area { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+#mic-btn {
+  width: 54px; height: 54px; border-radius: 50%;
+  border: 2px solid var(--border-h);
+  background: rgba(0,10,25,0.8);
+  color: var(--text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  box-shadow: 0 0 15px rgba(21,101,192,0.3);
+  position: relative; overflow: visible;
+}
+#mic-btn:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 25px rgba(0,229,255,0.4);
+  color: var(--cyan);
+}
+#mic-btn.recording {
+  border-color: var(--red);
+  box-shadow: 0 0 30px rgba(255,82,82,0.5);
+  animation: pulse-rec 0.8s ease infinite;
+}
+#mic-btn.processing {
+  border-color: var(--yellow);
+  box-shadow: 0 0 25px rgba(255,215,64,0.4);
+}
+@keyframes pulse-rec {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(255,82,82,0.5); }
+  50%       { transform: scale(1.06); box-shadow: 0 0 50px rgba(255,82,82,0.7); }
+}
+.mic-svg { width: 22px; height: 22px; fill: currentColor; }
+#mic-label {
+  font-family: var(--orb); font-size: 8px; letter-spacing: 2px;
+  color: var(--text-d); text-align: center;
+}
+#mic-label.recording { color: var(--red); }
+#mic-label.processing { color: var(--yellow); }
+
+.bb-right-items { display: flex; justify-content: flex-end; gap: 24px; }
+
+/* ── RECORDING RING (animated when speaking) ───────────────────────── */
+#rec-ring {
+  position: fixed;
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  border: 2px solid var(--red);
+  opacity: 0;
+  transition: opacity 0.2s;
+  animation: ring-expand 1s ease infinite;
+  pointer-events: none;
+}
+#rec-ring.active { opacity: 1; }
+@keyframes ring-expand {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* ── SPEAKING WAVE (when AEGIS is responding) ──────────────────────── */
+#speak-overlay {
+  position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 4px; align-items: flex-end; height: 24px;
+  opacity: 0; transition: opacity 0.2s;
+}
+#speak-overlay.active { opacity: 1; }
+.wave-bar {
+  width: 3px; border-radius: 2px;
+  background: linear-gradient(180deg, var(--cyan), var(--blue));
+  box-shadow: 0 0 6px var(--cyan);
+}
+.wave-bar:nth-child(1) { animation: wave 0.9s ease infinite; }
+.wave-bar:nth-child(2) { animation: wave 0.9s ease 0.1s infinite; }
+.wave-bar:nth-child(3) { animation: wave 0.9s ease 0.2s infinite; }
+.wave-bar:nth-child(4) { animation: wave 0.9s ease 0.3s infinite; }
+.wave-bar:nth-child(5) { animation: wave 0.9s ease 0.15s infinite; }
+.wave-bar:nth-child(6) { animation: wave 0.9s ease 0.05s infinite; }
+.wave-bar:nth-child(7) { animation: wave 0.9s ease 0.25s infinite; }
+@keyframes wave {
+  0%, 100% { height: 4px; } 50% { height: 20px; }
+}
+
+/* ── MISC ──────────────────────────────────────────────────────────── */
+.glow-text { text-shadow: 0 0 12px currentColor; }
+a { color: inherit; text-decoration: none; }
+</style>
+</head>
+<body>
+<div id="hud">
+
+  <!-- ── TOP BAR ─────────────────────────────────────────────────────── -->
+  <header id="topbar">
+    <div>
+      <div class="tb-name">A.E.G.I.S.</div>
+      <div class="tb-sub">ADAPTIVE EXECUTIVE GUARDIAN INTELLIGENCE SYSTEM</div>
+    </div>
+    <div class="tb-center">
+      <div class="tb-obj-label">PRIMARY OBJECTIVE</div>
+      <div class="tb-obj-text" id="tb-obj">STACK 1 BTC · ACHIEVE FINANCIAL INDEPENDENCE</div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-pills">
+        <span class="pill pill-on">ONLINE</span>
+        <span class="pill pill-sec">SECURE</span>
+        <span class="pill pill-enc">ENCRYPTED</span>
+        <span class="pill pill-aut" id="brief-pill">AUTO-BRIEF</span>
+      </div>
+      <div id="clock">00:00:00</div>
+      <div id="dateline">-- --- ----</div>
+    </div>
+  </header>
+
+  <!-- ── MAIN GRID ───────────────────────────────────────────────────── -->
+  <div id="main">
+
+    <!-- LEFT PANEL -->
+    <aside class="panel" id="left-panel">
+      <div class="ph">SYSTEM VITALS</div>
+      <div id="vitals">
+        <div class="vrow">
+          <span class="vlabel">BTC PRICE</span>
+          <span class="vval glow-text" id="v-btc" style="color:var(--cyan)">—</span>
+        </div>
+        <div class="vrow">
+          <span class="vlabel">STACK (BTC)</span>
+          <span class="vval" id="v-stack">—</span>
+        </div>
+        <div class="vrow">
+          <span class="vlabel">STACK VALUE</span>
+          <span class="vval" id="v-stackval">—</span>
+        </div>
+        <div class="vrow">
+          <span class="vlabel">NET WORTH</span>
+          <span class="vval" id="v-nw">—</span>
+        </div>
+        <div class="vrow">
+          <span class="vlabel">MSTR</span>
+          <span class="vval" id="v-mstr">—</span>
+        </div>
+        <div class="vrow">
+          <span class="vlabel">COINBASE</span>
+          <span class="vval" id="v-cb">—</span>
+        </div>
+        <div class="vrow">
+          <span class="vlabel">mNAV</span>
+          <span class="vval" id="v-mnav">—</span>
+        </div>
+      </div>
+      <div class="ph" style="margin-top:8px">TELEMETRY</div>
+      <div id="telemetry-wrap">
+        <div id="telemetry"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER: ORB -->
+    <div id="center">
+      <canvas id="orb-canvas"></canvas>
+      <div id="coords" id="coords-info">
+        SESSION: ----<br>
+        LAT —.——° · LON —.——°<br>
+        ALT FLIGHT · HEADING 000°
+      </div>
+      <div id="obj-panel">
+        <div class="obj-header">
+          <span>◈ BTC GOAL</span>
+          <span id="obj-pct">0%</span>
+        </div>
+        <div class="obj-goal-val" id="obj-target-val">1.00000000 BTC</div>
+        <div class="obj-progress">
+          <div class="obj-progress-fill" id="obj-bar" style="width:0%"></div>
+        </div>
+        <div class="obj-stats">
+          <span class="obj-current" id="obj-current">CURRENT: — BTC</span>
+          <span class="obj-target">TARGET: 1 BTC · 2026-12-31</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <aside class="panel" id="right-panel">
+      <div class="ph">FINANCIAL PULSE</div>
+      <div id="financial">
+        <div class="frow">
+          <span class="fticker">BTC-USD</span>
+          <div style="text-align:right">
+            <div class="fprice" id="f-btc">—</div>
+            <div class="fchg" id="f-btc-chg">—</div>
+          </div>
+        </div>
+        <div class="frow">
+          <span class="fticker">MSTR</span>
+          <div style="text-align:right">
+            <div class="fprice" id="f-mstr">—</div>
+            <div class="fchg" id="f-mstr-chg">—</div>
+          </div>
+        </div>
+        <div class="frow">
+          <span class="fticker">HUT</span>
+          <div style="text-align:right">
+            <div class="fprice" id="f-hut">—</div>
+            <div class="fchg" id="f-hut-chg">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ph" style="justify-content:space-between">
+        HABITS
+        <span id="habit-health-label" style="font-size:9px;letter-spacing:1px;color:var(--green)">—</span>
+      </div>
+      <canvas id="habit-canvas"></canvas>
+      <div id="habit-btns"></div>
+
+      <div class="ph">BITCOIN STACK</div>
+      <div id="stack-info">
+        <div class="srow"><span class="slabel">TOTAL BTC</span><span class="sval" id="s-btc">—</span></div>
+        <div class="srow"><span class="slabel">COST BASIS</span><span class="sval" id="s-basis">—</span></div>
+        <div class="srow"><span class="slabel">UNREALIZED P/L</span><span class="sval" id="s-pnl">—</span></div>
+        <div class="srow"><span class="slabel">GOAL PROGRESS</span><span class="sval" id="s-progress">—</span></div>
+      </div>
+
+      <div class="ph">LAST INTERACTION</div>
+      <div id="voice-section">
+        <div style="font-size:9px;color:var(--text-d);letter-spacing:1px">YOU</div>
+        <div id="last-query">—</div>
+        <div style="font-size:9px;color:var(--text-d);letter-spacing:1px;margin-top:6px">AEGIS</div>
+        <div id="last-response">Awaiting query.</div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ── BOTTOM BAR ──────────────────────────────────────────────────── -->
+  <footer id="bottombar">
+    <div class="bb-status-items">
+      <div class="bb-stat">SUBSTRATE <span id="bb-sub">STABLE</span></div>
+      <div class="bb-stat">ACTIVE LEADS <span id="bb-leads">—</span></div>
+      <div class="bb-stat">FOCUS <span id="bb-focus">BITCOIN · WEALTH · CONTENT</span></div>
+    </div>
+
+    <div id="mic-area">
+      <button id="mic-btn" title="Hold SPACE or click to speak">
+        <svg class="mic-svg" viewBox="0 0 24 24">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93h2c0 3.31 2.69 6 6 6s6-2.69 6-6h2c0 4.08-3.06 7.44-7 7.93V19h3v2H9v-2h3v-3.07z"/>
+        </svg>
+      </button>
+      <div id="mic-label">SPACE · SPEAK</div>
+    </div>
+
+    <div class="bb-right-items">
+      <div class="bb-stat">UPLOAD <span id="bb-up">0.0 MB/s</span></div>
+      <div class="bb-stat">PIPELINE <span id="bb-pipe">—</span></div>
+      <div class="bb-stat">SYNC <span id="bb-sync">—</span></div>
+      <a href="/settings" title="Settings" style="color:var(--text-d);display:grid;place-items:center;transition:color 120ms" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-d)'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+      </a>
+      <a href="/" title="Classic Dashboard" style="color:var(--text-d);display:grid;place-items:center;font-size:9px;letter-spacing:1px;transition:color 120ms" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-d)'">CLASSIC</a>
+    </div>
+  </footer>
+</div>
+
+<!-- SPEAKING WAVE -->
+<div id="speak-overlay">
+  <div class="wave-bar" style="height:4px"></div>
+  <div class="wave-bar" style="height:4px"></div>
+  <div class="wave-bar" style="height:4px"></div>
+  <div class="wave-bar" style="height:4px"></div>
+  <div class="wave-bar" style="height:4px"></div>
+  <div class="wave-bar" style="height:4px"></div>
+  <div class="wave-bar" style="height:4px"></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════════════════════════════════ */
+function tickClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${hh}:${mm}`;
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('dateline').textContent =
+    `${String(now.getDate()).padStart(2,'0')} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
+setInterval(tickClock, 30000);
+tickClock();
+
+/* ══════════════════════════════════════════════════════════════════════
+   VAULT KNOWLEDGE GRAPH ORB (Three.js force-directed graph)
+═══════════════════════════════════════════════════════════════════════ */
+(function initOrb() {
+  const canvas = document.getElementById('orb-canvas');
+  const W = 440, H = 440;
+  canvas.width  = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(W, H);
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 100);
+  camera.position.z = 4.5;
+
+  const DOMAIN_COLORS = {
+    bitcoin:  0xF7931A, finance:  0xFFD700, content:  0x42A5F5,
+    military: 0x66BB6A, faith:    0xAB47BC, health:   0xEF5350,
+    strategy: 0xFFCA28, source:   0x78909C, project:  0x4FC3F7,
+    default:  0x1976D2,
+  };
+
+  /* Core glow ─────────────────────────────────────────────────────── */
+  const coreGeo  = new THREE.SphereGeometry(0.28, 32, 32);
+  const coreMat  = new THREE.MeshBasicMaterial({ color: 0x0D47A1, transparent: true, opacity: 0.55 });
+  scene.add(new THREE.Mesh(coreGeo, coreMat));
+
+  const centerGeo = new THREE.SphereGeometry(0.11, 16, 16);
+  const centerMat = new THREE.MeshBasicMaterial({ color: 0x81D4FA, transparent: true, opacity: 0.9 });
+  scene.add(new THREE.Mesh(centerGeo, centerMat));
+
+  const ringGeo = new THREE.TorusGeometry(1.75, 0.012, 6, 80);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0x1565C0, transparent: true, opacity: 0.35 });
+  const ring    = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI / 2;
+  scene.add(ring);
+
+  /* Graph group ───────────────────────────────────────────────────── */
+  const graphGroup = new THREE.Group();
+  scene.add(graphGroup);
+
+  let nodePoints = null, edgeLines = null;
+  let nodes = [], filteredEdges = [];
+  let simRunning = true, simStep = 0;
+  let orbHealthColor = 0x0D47A1;
+  let isRecordingOrb = false;
+
+  function buildObjects() {
+    while (graphGroup.children.length) graphGroup.remove(graphGroup.children[0]);
+    nodePoints = null; edgeLines = null;
+
+    const posArr = new Float32Array(nodes.length * 3);
+    const colArr = new Float32Array(nodes.length * 3);
+    nodes.forEach((n, i) => {
+      posArr[i*3] = n.x; posArr[i*3+1] = n.y; posArr[i*3+2] = n.z;
+      const hex = DOMAIN_COLORS[n.domain] || DOMAIN_COLORS.default;
+      colArr[i*3]   = ((hex >> 16) & 0xff) / 255;
+      colArr[i*3+1] = ((hex >> 8)  & 0xff) / 255;
+      colArr[i*3+2] = (hex & 0xff) / 255;
+    });
+    const nGeo = new THREE.BufferGeometry();
+    nGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+    nGeo.setAttribute('color',    new THREE.BufferAttribute(colArr, 3));
+    nodePoints = new THREE.Points(nGeo, new THREE.PointsMaterial({
+      size: 0.065, vertexColors: true, transparent: true, opacity: 0.9,
+      blending: THREE.AdditiveBlending, sizeAttenuation: true, depthWrite: false,
+    }));
+    graphGroup.add(nodePoints);
+
+    if (filteredEdges.length > 0) {
+      const eArr = new Float32Array(filteredEdges.length * 6);
+      let idx = 0;
+      filteredEdges.forEach(e => {
+        const a = nodes[e.fi], b = nodes[e.ti];
+        eArr[idx++]=a.x; eArr[idx++]=a.y; eArr[idx++]=a.z;
+        eArr[idx++]=b.x; eArr[idx++]=b.y; eArr[idx++]=b.z;
+      });
+      const eGeo = new THREE.BufferGeometry();
+      eGeo.setAttribute('position', new THREE.BufferAttribute(eArr, 3));
+      edgeLines = new THREE.LineSegments(eGeo, new THREE.LineBasicMaterial({
+        color: 0x1565C0, transparent: true, opacity: 0.13,
+        blending: THREE.AdditiveBlending,
+      }));
+      graphGroup.add(edgeLines);
+    }
+  }
+
+  function syncPositions() {
+    if (nodePoints) {
+      const arr = nodePoints.geometry.attributes.position.array;
+      nodes.forEach((n, i) => { arr[i*3]=n.x; arr[i*3+1]=n.y; arr[i*3+2]=n.z; });
+      nodePoints.geometry.attributes.position.needsUpdate = true;
+    }
+    if (edgeLines) {
+      const arr = edgeLines.geometry.attributes.position.array;
+      let idx = 0;
+      filteredEdges.forEach(e => {
+        const a = nodes[e.fi], b = nodes[e.ti];
+        arr[idx++]=a.x; arr[idx++]=a.y; arr[idx++]=a.z;
+        arr[idx++]=b.x; arr[idx++]=b.y; arr[idx++]=b.z;
+      });
+      edgeLines.geometry.attributes.position.needsUpdate = true;
+    }
+  }
+
+  function forceStep() {
+    const K_REP=0.6, K_ATT=0.025, L0=1.1, DAMP=0.88, CF=0.008;
+    const n = nodes.length;
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, dz=nodes[i].z-nodes[j].z;
+        const d2=dx*dx+dy*dy+dz*dz+0.01, d=Math.sqrt(d2), f=K_REP/d2;
+        const nx=dx/d, ny=dy/d, nz=dz/d;
+        nodes[i].vx+=f*nx; nodes[i].vy+=f*ny; nodes[i].vz+=f*nz;
+        nodes[j].vx-=f*nx; nodes[j].vy-=f*ny; nodes[j].vz-=f*nz;
+      }
+    }
+    filteredEdges.forEach(e => {
+      const a=nodes[e.fi], b=nodes[e.ti];
+      const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z;
+      const d=Math.sqrt(dx*dx+dy*dy+dz*dz)+0.001, f=K_ATT*(d-L0);
+      const nx=dx/d, ny=dy/d, nz=dz/d;
+      a.vx+=f*nx; a.vy+=f*ny; a.vz+=f*nz;
+      b.vx-=f*nx; b.vy-=f*ny; b.vz-=f*nz;
+    });
+    nodes.forEach(nd => {
+      const cf = CF + CF * Math.min(nd.degree / 25, 2.5);
+      nd.vx+=(-nd.x)*cf; nd.vy+=(-nd.y)*cf; nd.vz+=(-nd.z)*cf;
+      nd.vx*=DAMP; nd.vy*=DAMP; nd.vz*=DAMP;
+      nd.x+=nd.vx; nd.y+=nd.vy; nd.z+=nd.vz;
+    });
+  }
+
+  function initFallback() {
+    const N=1400, pos=new Float32Array(N*3), col=new Float32Array(N*3);
+    const phi=Math.PI*(Math.sqrt(5)-1);
+    for (let i=0; i<N; i++) {
+      const y=1-(i/(N-1))*2, r=Math.sqrt(1-y*y), th=phi*i;
+      const rad=1.6+(Math.random()-0.5)*0.3;
+      pos[i*3]=Math.cos(th)*r*rad; pos[i*3+1]=y*rad; pos[i*3+2]=Math.sin(th)*r*rad;
+      const t=Math.random();
+      col[i*3]=0.05+t*0.1; col[i*3+1]=0.3+t*0.4; col[i*3+2]=0.6+t*0.4;
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('color',   new THREE.BufferAttribute(col,3));
+    graphGroup.add(new THREE.Points(geo, new THREE.PointsMaterial({
+      size:0.018, vertexColors:true, transparent:true, opacity:0.8,
+      blending:THREE.AdditiveBlending, sizeAttenuation:true, depthWrite:false,
+    })));
+    simRunning = false;
+  }
+
+  async function loadVaultGraph() {
+    const data = await fetchJSON('/api/vault/graph');
+    if (!data || !data.ok || !data.nodes || !data.nodes.length) { initFallback(); return; }
+
+    const MAX=150, rawNodes=data.nodes.slice(0,MAX);
+    const idxMap={}, degMap={};
+    rawNodes.forEach((n,i) => { idxMap[n.id]=i; degMap[n.id]=0; });
+    data.edges.forEach(e => {
+      if (degMap[e.from]!==undefined) degMap[e.from]++;
+      if (degMap[e.to]!==undefined)   degMap[e.to]++;
+    });
+
+    nodes = rawNodes.map((n,i) => {
+      const th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1), r=1.6+Math.random()*0.5;
+      return { id:n.id, domain:n.domain, degree:degMap[n.id]||0,
+        x:r*Math.sin(ph)*Math.cos(th), y:r*Math.sin(ph)*Math.sin(th), z:r*Math.cos(ph),
+        vx:0, vy:0, vz:0 };
+    });
+    filteredEdges = [];
+    data.edges.forEach(e => {
+      const fi=idxMap[e.from], ti=idxMap[e.to];
+      if (fi!==undefined && ti!==undefined) filteredEdges.push({fi,ti});
+    });
+
+    buildObjects();
+    addTelemetry(`VAULT GRAPH · ${nodes.length} NODES · ${filteredEdges.length} EDGES`, 'system');
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const t = Date.now() * 0.001;
+
+    if (simRunning && nodes.length > 0) {
+      const steps = simStep < 150 ? 5 : simStep < 400 ? 3 : 1;
+      for (let s = 0; s < steps; s++) forceStep();
+      simStep += steps;
+      syncPositions();
+      if (simStep > 700) simRunning = false;
+    }
+
+    graphGroup.rotation.y += 0.0025;
+    graphGroup.rotation.x += 0.0004;
+    ring.rotation.z += 0.002;
+
+    coreMat.opacity  = 0.4 + 0.2 * Math.sin(t * 3);
+    centerMat.opacity = 0.7 + 0.3 * Math.sin(t * 4);
+
+    if (isRecordingOrb) {
+      coreMat.color.setHex(0xFF1744); centerMat.color.setHex(0xFF8A80);
+    } else if (window._aegisSpeaking) {
+      coreMat.color.setHex(0x00ACC1); centerMat.color.setHex(0x00E5FF);
+    } else {
+      coreMat.color.setHex(orbHealthColor); centerMat.color.setHex(0x81D4FA);
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  loadVaultGraph();
+  animate();
+
+  window._setOrbRecording   = v   => { isRecordingOrb = v; };
+  window._setOrbHealthColor = hex => { orbHealthColor = hex; };
+})();
+
+/* ══════════════════════════════════════════════════════════════════════
+   TELEMETRY FEED
+═══════════════════════════════════════════════════════════════════════ */
+const tFeed = document.getElementById('telemetry');
+function addTelemetry(msg, cls = '') {
+  const now = new Date();
+  const ts  = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const row = document.createElement('div');
+  row.className = 'trow new';
+  row.innerHTML = `<span class="ttime">${ts}</span><span class="tprefix">&gt;</span><span class="tmsg ${cls}">${msg}</span>`;
+  tFeed.appendChild(row);
+  tFeed.scrollTop = tFeed.scrollHeight;
+  // Keep max 120 rows
+  while (tFeed.children.length > 120) tFeed.removeChild(tFeed.firstChild);
+}
+
+addTelemetry('AEGIS ONLINE — SYSTEMS NOMINAL', 'system');
+addTelemetry('Loading market data...', 'system');
+
+/* ══════════════════════════════════════════════════════════════════════
+   API DATA FETCH
+═══════════════════════════════════════════════════════════════════════ */
+async function fetchJSON(url) {
+  try {
+    const r = await fetch(url);
+    return await r.json();
+  } catch { return null; }
+}
+
+function fmt(n, dec=0) {
+  if (n == null || isNaN(n)) return '—';
+  return n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtUSD(n, dec=0) { return n != null ? '$' + fmt(n, dec) : '—'; }
+function chgClass(chg) { return (parseFloat(chg) >= 0) ? 'pos' : 'neg'; }
+
+let btcPrice = null;
+
+async function loadPortfolio() {
+  const d = await fetchJSON('/api/portfolio');
+  if (!d || !d.ok) return;
+  const p = d.data.prices;
+
+  if (p['BTC-USD']) {
+    btcPrice = p['BTC-USD'].price;
+    const chg = p['BTC-USD'].change;
+    document.getElementById('v-btc').textContent = fmtUSD(btcPrice);
+    document.getElementById('f-btc').textContent = fmtUSD(btcPrice);
+    const fc = document.getElementById('f-btc-chg');
+    fc.textContent = chg;
+    fc.className = 'fchg ' + chgClass(chg);
+  }
+  if (p['MSTR']) {
+    document.getElementById('v-mstr').textContent = fmtUSD(p['MSTR'].price, 2);
+    document.getElementById('f-mstr').textContent = fmtUSD(p['MSTR'].price, 2);
+    const fc = document.getElementById('f-mstr-chg');
+    fc.textContent = p['MSTR'].change;
+    fc.className = 'fchg ' + chgClass(p['MSTR'].change);
+  }
+  if (p['HUT']) {
+    document.getElementById('f-hut').textContent = fmtUSD(p['HUT'].price, 2);
+    const fc = document.getElementById('f-hut-chg');
+    fc.textContent = p['HUT'].change;
+    fc.className = 'fchg ' + chgClass(p['HUT'].change);
+  }
+  addTelemetry(`MARKET FETCH · BTC=${fmtUSD(btcPrice)} MSTR=${fmtUSD(p['MSTR']?.price,2)}`, 'system');
+}
+
+async function loadBTCPortfolio() {
+  const d = await fetchJSON('/api/btc-portfolio');
+  if (!d || !d.ok) return;
+  const stack = d.data.stack_btc;
+  const basis = d.data.cost_basis;
+
+  document.getElementById('v-stack').textContent    = stack ? stack.toFixed(8) + ' BTC' : '—';
+  document.getElementById('s-btc').textContent      = stack ? stack.toFixed(8) + ' BTC' : '—';
+  document.getElementById('s-basis').textContent    = basis ? fmtUSD(basis) : '—';
+  document.getElementById('v-cb').textContent       = stack && btcPrice ? fmtUSD(stack * btcPrice) : '—';
+
+  if (stack && btcPrice) {
+    const val = stack * btcPrice;
+    document.getElementById('v-stackval').textContent = fmtUSD(val);
+    const pnl = basis ? (val - stack * basis) : null;
+    if (pnl != null) {
+      const el = document.getElementById('s-pnl');
+      el.textContent = (pnl >= 0 ? '+' : '') + fmtUSD(pnl);
+      el.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+  }
+
+  // Goal progress (target: 1 BTC)
+  const TARGET = 1.0;
+  if (stack) {
+    const pct = Math.min(stack / TARGET * 100, 100);
+    document.getElementById('obj-bar').style.width     = pct + '%';
+    document.getElementById('obj-pct').textContent     = pct.toFixed(1) + '%';
+    document.getElementById('obj-current').textContent = `CURRENT: ${stack.toFixed(8)} BTC`;
+    document.getElementById('s-progress').textContent  = pct.toFixed(1) + '% OF 1 BTC';
+    addTelemetry(`BTC STACK LOADED · ${stack.toFixed(8)} BTC (${pct.toFixed(1)}% of goal)`, 'system');
+  }
+}
+
+async function loadNetWorth() {
+  const d = await fetchJSON('/api/networth');
+  if (!d || !d.ok) return;
+  const total = d.data?.total_usd;
+  if (total != null) {
+    document.getElementById('v-nw').textContent = fmtUSD(total);
+  }
+}
+
+async function loadMnav() {
+  const d = await fetchJSON('/api/mnav');
+  if (!d || !d.ok) return;
+  if (d.mnav) {
+    document.getElementById('v-mnav').textContent = d.mnav.toFixed(2) + 'x';
+  }
+}
+
+async function loadContent() {
+  const d = await fetchJSON('/api/content');
+  if (!d || !d.ok) return;
+  const active = (d.items || []).filter(i => !['published','archived'].includes(i.stage));
+  document.getElementById('bb-pipe').textContent = active.length + ' ACTIVE';
+}
+
+async function refreshAll() {
+  await loadPortfolio();
+  await Promise.all([loadBTCPortfolio(), loadNetWorth(), loadMnav(), loadContent()]);
+}
+
+refreshAll();
+setInterval(refreshAll, 90_000);
+
+/* ══════════════════════════════════════════════════════════════════════
+   VOICE RECORDING
+═══════════════════════════════════════════════════════════════════════ */
+let mediaRecorder = null;
+let audioChunks   = [];
+let isRecording   = false;
+let micStream     = null;
+window._aegisSpeaking = false;
+
+const micBtn    = document.getElementById('mic-btn');
+const micLabel  = document.getElementById('mic-label');
+const speakWave = document.getElementById('speak-overlay');
+
+async function getMicStream() {
+  if (!micStream) {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  }
+  return micStream;
+}
+
+async function startVoice() {
+  if (isRecording) return;
+  try {
+    const stream = await getMicStream();
+    audioChunks  = [];
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = handleVoiceStop;
+    mediaRecorder.start(100);
+    isRecording = true;
+    micBtn.classList.add('recording');
+    micLabel.textContent = 'LISTENING...';
+    micLabel.className   = 'recording';
+    window._setOrbRecording(true);
+    addTelemetry('VOICE INPUT — LISTENING', 'warn');
+  } catch (e) {
+    addTelemetry('MIC ERROR: ' + e.message, 'warn');
+  }
+}
+
+function stopVoice() {
+  if (!isRecording || !mediaRecorder) return;
+  mediaRecorder.stop();
+  isRecording = false;
+  micBtn.classList.remove('recording');
+  micBtn.classList.add('processing');
+  micLabel.textContent = 'PROCESSING...';
+  micLabel.className   = 'processing';
+  window._setOrbRecording(false);
+}
+
+async function handleVoiceStop() {
+  const blob = new Blob(audioChunks, { type: 'audio/webm' });
+  const fd   = new FormData();
+  fd.append('audio', blob, 'query.webm');
+
+  addTelemetry('TRANSMITTING AUDIO — WHISPER TRANSCRIPTION', 'system');
+
+  try {
+    const resp = await fetch('/api/voice/query', { method: 'POST', body: fd });
+    const data = await resp.json();
+
+    micBtn.classList.remove('processing');
+    micLabel.textContent = 'SPACE · SPEAK';
+    micLabel.className   = '';
+
+    if (!data.ok) {
+      addTelemetry('QUERY ERROR: ' + (data.error || 'unknown'), 'warn');
+      return;
+    }
+
+    addTelemetry(data.transcript, 'user');
+    addTelemetry('AEGIS: ' + data.response, 'aegis');
+
+    document.getElementById('last-query').textContent    = data.transcript;
+    document.getElementById('last-response').textContent = data.response;
+
+    playResponse(data.audio_url);
+  } catch (e) {
+    micBtn.classList.remove('processing');
+    micLabel.textContent = 'SPACE · SPEAK';
+    micLabel.className   = '';
+    addTelemetry('NETWORK ERROR: ' + e.message, 'warn');
+  }
+}
+
+function playResponse(url) {
+  window._aegisSpeaking = true;
+  speakWave.classList.add('active');
+  addTelemetry('AEGIS SPEAKING', 'system');
+
+  const audio = new Audio(url);
+  audio.onended = () => {
+    window._aegisSpeaking = false;
+    speakWave.classList.remove('active');
+    addTelemetry('TRANSMISSION COMPLETE', 'system');
+  };
+  audio.onerror = () => {
+    window._aegisSpeaking = false;
+    speakWave.classList.remove('active');
+  };
+  audio.play().catch(() => {
+    window._aegisSpeaking = false;
+    speakWave.classList.remove('active');
+  });
+}
+
+/* Keyboard: hold SPACE to speak */
+let spaceDown = false;
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !e.repeat && !spaceDown) {
+    e.preventDefault();
+    spaceDown = true;
+    startVoice();
+  }
+});
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space') {
+    spaceDown = false;
+    stopVoice();
+  }
+});
+
+/* Mouse: hold mic button */
+micBtn.addEventListener('mousedown', startVoice);
+document.addEventListener('mouseup',  () => { if (isRecording) stopVoice(); });
+
+/* ══════════════════════════════════════════════════════════════════════
+   HABIT RINGS
+═══════════════════════════════════════════════════════════════════════ */
+function renderHabitRings(habits) {
+  const canvas = document.getElementById('habit-canvas');
+  const W = canvas.parentElement.clientWidth || 240;
+  const H = 196;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const ctx   = canvas.getContext('2d');
+  const cx    = W / 2, cy = H / 2;
+  const THICK = 8, GAP = 5;
+  const OUTER_R = Math.min(cx, cy) - 10;
+
+  ctx.clearRect(0, 0, W, H);
+
+  habits.forEach((h, i) => {
+    const r    = OUTER_R - i * (THICK + GAP);
+    const fill = h.week_done / 7;
+    const end  = -Math.PI / 2 + fill * Math.PI * 2;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth   = THICK;
+    ctx.stroke();
+
+    if (fill > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, -Math.PI / 2, end);
+      ctx.strokeStyle = h.color;
+      ctx.lineWidth   = THICK;
+      ctx.lineCap     = 'round';
+      ctx.shadowColor = h.color;
+      ctx.shadowBlur  = h.done_today ? 10 : 3;
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+      ctx.lineCap     = 'butt';
+    }
+  });
+
+  const done = habits.filter(h => h.done_today).length;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = 'rgba(227,242,253,0.92)';
+  ctx.font         = `700 18px 'Orbitron', sans-serif`;
+  ctx.fillText(`${done}/${habits.length}`, cx, cy - 7);
+  ctx.fillStyle = 'rgba(84,110,122,0.8)';
+  ctx.font      = `9px 'JetBrains Mono', monospace`;
+  ctx.fillText('TODAY', cx, cy + 11);
+}
+
+function renderHabitButtons(habits) {
+  const container = document.getElementById('habit-btns');
+  container.innerHTML = '';
+  habits.forEach(h => {
+    const btn = document.createElement('button');
+    btn.className = 'hbt' + (h.done_today ? ' done' : '');
+    btn.style.color = h.done_today ? h.color : '';
+    btn.innerHTML = `
+      <span class="hbt-dot" style="background:${h.color};opacity:${h.done_today ? 1 : 0.4}"></span>
+      <span>${h.name}</span>
+      <span class="hbt-check" style="color:${h.color}">✓</span>
+    `;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      await fetch('/api/habits/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: h.id, done: !h.done_today }),
+      });
+      loadHabits();
+    });
+    container.appendChild(btn);
+  });
+}
+
+async function loadHabits() {
+  const d = await fetchJSON('/api/habits');
+  if (!d || !d.ok) return;
+
+  renderHabitRings(d.habits);
+  renderHabitButtons(d.habits);
+
+  const health = d.health ?? 0;
+  const orbColor = health >= 0.8 ? 0x00C853 : health >= 0.4 ? 0xFFD740 : 0xFF1744;
+  if (window._setOrbHealthColor) window._setOrbHealthColor(orbColor);
+
+  const label = document.getElementById('habit-health-label');
+  if (label) {
+    label.textContent = `${Math.round(health * 100)}% TODAY`;
+    label.style.color = health >= 0.8 ? 'var(--green)' : health >= 0.4 ? 'var(--yellow)' : 'var(--red)';
+  }
+}
+
+loadHabits();
+setInterval(loadHabits, 120_000);
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOAD USER CONFIG — apply name, accent, theme from settings
+═══════════════════════════════════════════════════════════════════════ */
+async function applyUserConfig() {
+  try {
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    if (!d.ok) return;
+    const cfg = d.config;
+
+    // AI name
+    const name = cfg.ai?.name || 'AEGIS';
+    const full = cfg.ai?.full_name || 'Adaptive Executive Guardian Intelligence System';
+    document.title = name + ' — Command Interface';
+    document.querySelector('.tb-name').textContent = name.toUpperCase() + '.';
+    document.querySelector('.tb-sub').textContent = full.toUpperCase();
+
+    // Objective
+    const obj = cfg.user?.primary_objective || '';
+    if (obj) document.getElementById('tb-obj').textContent = obj.toUpperCase();
+
+    // Accent color
+    const accent = cfg.ai?.accent_color;
+    if (accent) {
+      document.documentElement.style.setProperty('--cyan', accent);
+      document.documentElement.style.setProperty('--cyan-d', accent);
+    }
+
+    // Theme
+    if (cfg.ai?.theme === 'light') document.body.classList.add('light-hud');
+
+    addTelemetry(`CONFIG LOADED · ${name.toUpperCase()} IDENTITY APPLIED`, 'system');
+  } catch { /* silently continue */ }
+}
+applyUserConfig();
+
+/* ══════════════════════════════════════════════════════════════════════
+   BOOT SEQUENCE TELEMETRY
+═══════════════════════════════════════════════════════════════════════ */
+const bootMsgs = [
+  ['INITIALIZING NEURAL INTERFACE', 'system'],
+  ['VAULT CONNECTION ESTABLISHED', 'system'],
+  ['PORTFOLIO FEEDS ACTIVE', 'system'],
+  ['RSS INTELLIGENCE FEEDS ONLINE', 'system'],
+  ['TELEGRAM COMMAND CHANNEL READY', 'system'],
+  ['VOICE ENGINE LOADED · FABLE VOICE', 'system'],
+  ['ALL SYSTEMS NOMINAL', 'system'],
+  ['AWAITING COMMAND', 'aegis'],
+];
+let bi = 0;
+function bootTick() {
+  if (bi < bootMsgs.length) {
+    addTelemetry(...bootMsgs[bi++]);
+    setTimeout(bootTick, 350 + Math.random() * 200);
+  }
+}
+setTimeout(bootTick, 400);
+</script>
+</body>
+</html>

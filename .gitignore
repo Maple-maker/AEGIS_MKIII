@@ -1,0 +1,22 @@
+# Environment
+.env
+*.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Personal data — never commit
+config/user_config.json
+config/habits.json
+data/
+briefs/
+audio/
+
+# MacOS
+.DS_Store
+
+# Logs
+*.log

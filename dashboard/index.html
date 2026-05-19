@@ -1,0 +1,2477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AEGIS — Command Interface</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0A0B0E;
+  --bg-2: #0E1014;
+  --surface: #14161B;
+  --surface-2: #1A1D24;
+  --surface-3: #22262F;
+  --border: #23272F;
+  --border-2: #2D323C;
+  --text: #E8EAED;
+  --text-2: #9097A2;
+  --text-3: #5A6069;
+  --text-4: #3D424B;
+  --signal: #6FC8D6;
+  --signal-dim: #3A6E78;
+  --positive: #5FCB95;
+  --negative: #E68078;
+  --warning: #D9B36A;
+  --violet: #9B8CE6;
+  --grid: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  height: 100%;
+  overflow: hidden;
+}
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-feature-settings: "tnum","cv11"; }
+
+/* ── APP SHELL ─────────────────────────────────────────────────────────── */
+.app { display: grid; grid-template-columns: 64px 1fr; height: 100vh; overflow: hidden; }
+
+/* ── RAIL ──────────────────────────────────────────────────────────────── */
+.rail {
+  border-right: 1px solid var(--border);
+  padding: 18px 0;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: #0c0e12;
+}
+.logo {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(140deg,#1a2027,#0e1115);
+  border: 1px solid var(--border-2);
+  display: grid; place-items: center; margin-bottom: 18px;
+  position: relative;
+}
+.logo::before {
+  content: "";
+  width: 14px; height: 14px;
+  border: 1.5px solid var(--signal); border-radius: 2px;
+  transform: rotate(45deg);
+  box-shadow: 0 0 18px -2px rgba(111,200,214,.6);
+}
+.nav-btn {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: grid; place-items: center;
+  color: var(--text-3); cursor: pointer; position: relative;
+  transition: color 120ms;
+}
+.nav-btn:hover { color: var(--text); }
+.nav-btn.active { color: var(--signal); background: rgba(111,200,214,.06); }
+.nav-btn.active::before {
+  content: ""; position: absolute; left: -12px; top: 50%;
+  width: 2px; height: 18px; background: var(--signal);
+  transform: translateY(-50%); border-radius: 2px;
+}
+.nav-spacer { flex: 1; }
+/* Nav section filtering */
+.card { transition: opacity 180ms, transform 180ms; }
+.card.nav-hidden { display: none; }
+/* Quick-add modal tabs */
+.qa-tab {
+  flex: 1; padding: 6px 4px; font-size: 11px; border-radius: 6px;
+  background: var(--surface-2); border: 1px solid var(--border-2);
+  color: var(--text-3); cursor: pointer; transition: all 120ms;
+}
+.qa-tab.active { background: rgba(111,200,214,.12); border-color: var(--signal); color: var(--signal); }
+/* Reading feed */
+.reading-tab {
+  font-size: 10px; padding: 3px 10px; border-radius: 4px; cursor: pointer;
+  background: var(--surface-2); border: 1px solid var(--border-2); color: var(--text-3);
+  transition: all 120ms;
+}
+.reading-tab.active { background: rgba(111,200,214,.1); border-color: var(--signal); color: var(--signal); }
+.reading-article {
+  padding: 9px 0; border-bottom: 1px solid var(--border-1);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.reading-article:last-child { border-bottom: none; }
+.reading-article-title { font-size: 12px; color: var(--text); line-height: 1.4; font-weight: 500; }
+.reading-article-title a { color: inherit; text-decoration: none; }
+.reading-article-title a:hover { color: var(--signal); }
+.reading-article-meta { font-size: 10px; color: var(--text-3); display: flex; gap: 8px; align-items: center; }
+.reading-niche-tag {
+  font-size: 9px; padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+/* Light theme override */
+body.light { --bg: #f4f5f7; --surface-1: #ffffff; --surface-2: #f0f1f3; --surface-3: #e8eaed;
+  --border-1: rgba(0,0,0,.08); --border-2: rgba(0,0,0,.13); --text: #0d1117; --text-2: #374151;
+  --text-3: #6b7280; --text-4: #9ca3af; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg,#2a3038,#161a20);
+  border: 1px solid var(--border-2);
+  display: grid; place-items: center;
+  font-size: 11px; color: var(--text-2); font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── MAIN ──────────────────────────────────────────────────────────────── */
+.main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+/* ── TOPBAR ────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px; border-bottom: 1px solid var(--border);
+  gap: 24px; flex-shrink: 0;
+  background: linear-gradient(180deg, #0d0f13 0%, var(--bg) 100%);
+}
+.greeting { display: flex; align-items: baseline; gap: 14px; }
+.pulse {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--signal);
+  box-shadow: 0 0 0 4px rgba(111,200,214,.12);
+  display: inline-block; margin-right: 8px; vertical-align: middle;
+}
+.greeting h1 { font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
+.greeting .day { color: var(--text-3); font-size: 12px; font-family: 'JetBrains Mono', monospace; letter-spacing: .04em; }
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px; border: 1px solid var(--border);
+  border-radius: 999px; font-size: 12px; color: var(--text-2);
+  background: var(--surface); white-space: nowrap;
+}
+.pill .val { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.pill .up { color: var(--positive); }
+.pill .dn { color: var(--negative); }
+.cmd {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 14px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--surface);
+  min-width: 260px; color: var(--text-3); font-size: 13px;
+  cursor: pointer; transition: border-color 120ms;
+}
+.cmd:hover { border-color: var(--border-2); }
+.cmd .kbd {
+  margin-left: auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--text-3);
+  border: 1px solid var(--border-2); padding: 2px 6px; border-radius: 5px;
+}
+
+/* ── CANVAS ────────────────────────────────────────────────────────────── */
+.canvas {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 20px 24px 24px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: auto;
+  gap: 14px;
+  align-content: start;
+}
+.canvas::-webkit-scrollbar { width: 4px; }
+.canvas::-webkit-scrollbar-track { background: transparent; }
+.canvas::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+/* ── CARDS ─────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  position: relative;
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 12px; font-weight: 500; color: var(--text);
+  letter-spacing: -.005em; display: flex; align-items: center; gap: 8px;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--text-2);
+}
+.card-title .swatch { width: 5px; height: 5px; border-radius: 1px; }
+.card-meta {
+  font-size: 10px; color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace; letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* spans */
+.c-3 { grid-column: span 3; }
+.c-4 { grid-column: span 4; }
+.c-5 { grid-column: span 5; }
+.c-6 { grid-column: span 6; }
+.c-7 { grid-column: span 7; }
+.c-8 { grid-column: span 8; }
+.c-9 { grid-column: span 9; }
+.c-12 { grid-column: span 12; }
+
+/* ── OPERATOR ──────────────────────────────────────────────────────────── */
+.op-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.op-avatar {
+  width: 46px; height: 46px; border-radius: 12px;
+  background: linear-gradient(135deg,#1e2b33,#101518);
+  border: 1px solid var(--border-2);
+  display: grid; place-items: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600;
+  color: var(--signal); flex-shrink: 0;
+}
+.op-info .name { font-size: 15px; font-weight: 600; letter-spacing: -.01em; margin-bottom: 3px; }
+.op-info .role { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; letter-spacing: .04em; }
+.op-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.op-stat { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.op-stat .lbl { font-size: 9px; color: var(--text-3); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; }
+.op-stat .val { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+.op-stat .val span { color: var(--text-3); font-size: 10px; }
+.online-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--positive); font-family: 'JetBrains Mono', monospace;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.online-badge::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--positive);
+  box-shadow: 0 0 0 3px rgba(95,203,149,.12);
+}
+
+/* ── PORTFOLIO / FINANCE ───────────────────────────────────────────────── */
+.pf-hero { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.pf-hero .amt { font-size: 28px; font-weight: 500; letter-spacing: -0.02em; font-family: 'JetBrains Mono', monospace; }
+.pf-hero .chg { font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+.spark { height: 52px; margin: 8px -4px 12px; }
+.holdings { display: flex; flex-direction: column; }
+.hrow {
+  display: grid; grid-template-columns: 56px 1fr auto auto;
+  gap: 12px; align-items: center; padding: 7px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.hrow:last-child { border: none; }
+.ticker { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 12px; letter-spacing: .04em; }
+.rowname { color: var(--text-3); font-size: 11px; }
+.price { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.delta { font-family: 'JetBrains Mono', monospace; font-size: 11px; min-width: 52px; text-align: right; }
+.delta.up { color: var(--positive); }
+.delta.dn { color: var(--negative); }
+
+/* ── PRIORITIES ────────────────────────────────────────────────────────── */
+.prio-list { display: flex; flex-direction: column; gap: 0; }
+.prio-section-label {
+  font-size: 9px; color: var(--text-3); letter-spacing: .16em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace; padding: 8px 4px 4px; font-weight: 500;
+}
+.prio-section-label:first-child { padding-top: 0; }
+.prio {
+  display: grid; grid-template-columns: 18px 1fr;
+  gap: 12px; align-items: start;
+  padding: 9px 4px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: opacity 150ms;
+}
+.prio:last-child { border: none; }
+.prio.done { opacity: 0.4; }
+.prio.done .label { text-decoration: line-through; color: var(--text-3); }
+.check {
+  width: 15px; height: 15px; border-radius: 4px;
+  border: 1.5px solid var(--text-4); flex-shrink: 0; margin-top: 2px;
+  display: grid; place-items: center; transition: background 150ms, border-color 150ms;
+  cursor: pointer;
+}
+.prio.done .check {
+  background: var(--positive); border-color: var(--positive);
+}
+.check-mark { display: none; }
+.prio.done .check-mark { display: block; }
+.prio .body .label { font-size: 13px; color: var(--text); line-height: 1.4; }
+.prio .body .sub { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+.tag {
+  display: inline-block; font-size: 10px; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 7px;
+  border-radius: 4px; border: 1px solid var(--border-2); font-weight: 500;
+}
+.tag.urgent { color: var(--negative); border-color: rgba(230,128,120,.3); background: rgba(230,128,120,.06); }
+.tag.focus { color: var(--signal); border-color: rgba(111,200,214,.3); background: rgba(111,200,214,.06); }
+.tag.btc { color: var(--warning); border-color: rgba(217,179,106,.3); background: rgba(217,179,106,.06); }
+.tag.content { color: var(--violet); border-color: rgba(155,140,230,.3); background: rgba(155,140,230,.06); }
+
+/* ── SIGNAL / INTEL ────────────────────────────────────────────────────── */
+.feed { display: flex; flex-direction: column; }
+.post {
+  display: grid; grid-template-columns: 28px 1fr;
+  gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.post:last-child { border: none; }
+.av {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg,#2a3038,#171a20);
+  border: 1px solid var(--border-2); flex-shrink: 0;
+  display: grid; place-items: center; font-size: 9px;
+  font-family: 'JetBrains Mono', monospace; color: var(--text-3);
+}
+.post .hd { font-size: 11px; color: var(--text-2); display: flex; gap: 6px; align-items: center; margin-bottom: 3px; }
+.post .hd b { color: var(--text); font-weight: 500; }
+.post .hd .handle { color: var(--text-3); }
+.post .hd .cat {
+  margin-left: auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  padding: 2px 6px; border: 1px solid var(--border-2); border-radius: 3px;
+}
+.post .txt { font-size: 12px; line-height: 1.5; color: var(--text-2); }
+.post .why {
+  margin-top: 5px; font-size: 10px; color: var(--signal);
+  display: flex; align-items: center; gap: 5px;
+}
+.post .why::before {
+  content: ""; width: 3px; height: 3px; border-radius: 50%; background: var(--signal);
+}
+
+/* ── CONTENT PIPELINE ──────────────────────────────────────────────────── */
+.pipeline { display: flex; flex-direction: column; gap: 8px; }
+.pipe-item {
+  padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg-2); display: flex; gap: 12px; align-items: flex-start;
+}
+.pipe-stage {
+  font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  padding: 3px 7px; border-radius: 4px; border: 1px solid var(--border-2);
+  font-family: 'JetBrains Mono', monospace; white-space: nowrap; margin-top: 1px;
+  font-weight: 500;
+}
+.stage-idea { color: var(--text-3); border-color: var(--border-2); }
+.stage-research { color: var(--signal); border-color: rgba(111,200,214,.3); background: rgba(111,200,214,.06); }
+.stage-scripted { color: var(--warning); border-color: rgba(217,179,106,.3); background: rgba(217,179,106,.06); }
+.stage-filming { color: var(--violet); border-color: rgba(155,140,230,.3); background: rgba(155,140,230,.06); }
+.stage-done { color: var(--positive); border-color: rgba(95,203,149,.3); background: rgba(95,203,149,.06); }
+.pipe-title { font-size: 13px; color: var(--text); font-weight: 500; line-height: 1.35; flex: 1; }
+.pipe-meta { font-size: 10px; color: var(--text-3); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+/* ── FAITH ─────────────────────────────────────────────────────────────── */
+.faith-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 28px; align-items: start; }
+.faith-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.faith-eyebrow {
+  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--warning); font-family: 'JetBrains Mono', monospace;
+  font-weight: 500; display: flex; align-items: center; gap: 8px;
+}
+.faith-eyebrow::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--warning); box-shadow: 0 0 0 3px rgba(217,179,106,.10);
+}
+.verse {
+  margin: 6px 0 4px; font-family: 'Newsreader', Georgia, serif;
+  font-size: 17px; line-height: 1.5; color: var(--text);
+  font-weight: 300; font-style: italic; letter-spacing: -.005em;
+  padding-left: 16px; border-left: 1.5px solid var(--warning); max-width: 42ch;
+}
+.verse-ref { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); letter-spacing: .06em; }
+.faith-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.faith-list li {
+  font-size: 12px; color: var(--text-2); line-height: 1.5;
+  display: grid; grid-template-columns: 12px 1fr; gap: 8px; align-items: baseline;
+}
+.faith-list li::before {
+  content: ""; display: block; width: 4px; height: 4px; border-radius: 1px;
+  background: var(--warning); opacity: .7; margin-top: 7px;
+}
+.faith-list.ministry li { grid-template-columns: 58px 1fr; }
+.faith-list.ministry li::before { display: none; }
+.m-when {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3);
+  letter-spacing: .1em; padding: 2px 5px; border: 1px solid var(--border-2);
+  border-radius: 3px; text-align: center; white-space: nowrap;
+}
+
+/* ── HORIZON ────────────────────────────────────────────────────────────── */
+.horizon { display: flex; flex-direction: column; gap: 0; }
+.horizon-head {
+  display: grid; grid-template-columns: 110px 1fr;
+  gap: 16px; align-items: end; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.horizon-now { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3); letter-spacing: .14em; text-transform: uppercase; }
+.horizon-now b { color: var(--text); font-weight: 500; }
+.month-strip { display: grid; grid-template-columns: repeat(4,1fr); position: relative; }
+.month-strip .m {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--text-3);
+  padding: 5px 8px; border-left: 1px solid var(--border);
+}
+.month-strip .m:first-child { border-left: none; }
+.month-strip .m b { color: var(--text); font-weight: 500; margin-right: 6px; }
+.lanes { display: flex; flex-direction: column; position: relative; }
+.today-line {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: var(--signal); z-index: 5; pointer-events: none;
+}
+.today-line::before {
+  content: "TODAY"; position: absolute; top: -2px; left: 50%;
+  transform: translate(-50%,-100%);
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  letter-spacing: .14em; color: var(--signal);
+  padding: 2px 5px; border: 1px solid var(--signal-dim);
+  border-radius: 3px; background: var(--surface); white-space: nowrap;
+}
+.today-line::after {
+  content: ""; position: absolute; bottom: -3px; left: 50%;
+  transform: translateX(-50%); width: 5px; height: 5px;
+  border-radius: 50%; background: var(--signal);
+  box-shadow: 0 0 0 3px rgba(111,200,214,.15);
+}
+.lane:not(:first-of-type) .today-line::before { display: none; }
+.lane:not(:last-of-type) .today-line::after { display: none; }
+.lane {
+  display: grid; grid-template-columns: 110px 1fr;
+  align-items: center; gap: 16px; height: 38px;
+  border-bottom: 1px solid var(--border);
+}
+.lane:last-child { border-bottom: none; }
+.lane-label {
+  font-size: 10px; color: var(--text-2); letter-spacing: .1em;
+  text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+  display: flex; align-items: center; gap: 8px; font-weight: 500;
+}
+.lane-label .lane-dot { width: 5px; height: 5px; border-radius: 2px; }
+.lane-track {
+  position: relative; height: 100%;
+  background-image: linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 25% 100%; background-position: right;
+}
+.event {
+  position: absolute; top: 50%; transform: translate(-50%,-50%);
+  height: 20px; padding: 0 9px; border-radius: 4px;
+  font-size: 10px; color: var(--text); display: flex; align-items: center;
+  gap: 6px; background: var(--surface-2); border: 1px solid var(--border-2);
+  white-space: nowrap; line-height: 1; font-weight: 500;
+}
+.event .dt { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .06em; opacity: .6; font-weight: 400; }
+.event.travel { border-color: rgba(111,200,214,.35); background: rgba(111,200,214,.07); color: #9DD8E2; }
+.event.family { border-color: rgba(155,140,230,.35); background: rgba(155,140,230,.07); color: #BCB1ED; }
+.event.milestone { border-color: rgba(95,203,149,.35); background: rgba(95,203,149,.07); color: #88DAB0; }
+.event.btcgoal { border-color: rgba(217,179,106,.35); background: rgba(217,179,106,.07); color: #E3C588; }
+.upnext { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.up-card { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-2); display: flex; flex-direction: column; gap: 8px; }
+.up-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.up-date { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; line-height: 1.2; }
+.up-date b { display: block; color: var(--text); font-size: 20px; letter-spacing: -0.02em; font-weight: 500; line-height: 1; margin-bottom: 2px; font-family: 'JetBrains Mono', monospace; }
+.up-countdown { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-2); padding: 2px 7px; border: 1px solid var(--border-2); border-radius: 4px; letter-spacing: .06em; white-space: nowrap; }
+.up-title { font-size: 12px; color: var(--text); font-weight: 500; line-height: 1.35; }
+.up-meta { font-size: 10px; color: var(--text-3); display: flex; align-items: center; gap: 6px; letter-spacing: .04em; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
+.up-meta .ic { width: 5px; height: 5px; border-radius: 2px; }
+
+/* ── AEGIS COMPOSER ────────────────────────────────────────────────────── */
+.composer {
+  grid-column: span 12;
+  border: 1px solid var(--border); border-radius: 14px;
+  background: linear-gradient(180deg,#13161c,#101216);
+  padding: 16px 20px; display: flex; align-items: center; gap: 14px;
+}
+.composer .glyph {
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid var(--border-2); display: grid; place-items: center;
+  color: var(--signal); background: rgba(111,200,214,.05); flex-shrink: 0;
+}
+.composer .ask { font-size: 13px; color: var(--text-2); flex: 1; }
+.composer .ask b { color: var(--text); font-weight: 500; }
+.composer .chips { display: flex; gap: 8px; flex-shrink: 0; }
+.chip {
+  font-size: 11px; color: var(--text-2); padding: 6px 12px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); cursor: pointer; transition: color 120ms, border-color 120ms;
+  white-space: nowrap;
+}
+.chip:hover { color: var(--text); border-color: var(--border-2); }
+
+/* ── SKELETON ──────────────────────────────────────────────────────────── */
+.skeleton {
+  height: 10px; border-radius: 4px;
+  background: linear-gradient(90deg,var(--surface-2),var(--surface-3),var(--surface-2));
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+  margin: 4px 0;
+}
+.skeleton.s2 { width: 60%; }
+.skeleton.s3 { width: 75%; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── NET WORTH ──────────────────────────────────────────────────────────── */
+.nw-hero { display: flex; align-items: baseline; gap: 14px; margin-bottom: 4px; }
+.nw-total { font-size: 34px; font-weight: 500; letter-spacing: -0.025em; font-family: 'JetBrains Mono', monospace; }
+.nw-pnl { font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+.nw-accounts { display: flex; flex-direction: column; gap: 0; margin-top: 14px; }
+.nw-row {
+  display: grid; grid-template-columns: 180px 1fr 120px 110px;
+  align-items: center; gap: 16px;
+  padding: 11px 4px; border-bottom: 1px solid var(--border);
+}
+.nw-row:last-child { border: none; }
+.nw-label { display: flex; align-items: center; gap: 8px; }
+.nw-dot { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; }
+.nw-name { font-size: 12px; color: var(--text); font-weight: 500; }
+.nw-broker { font-size: 10px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+.nw-bar-wrap { height: 4px; background: var(--surface-3); border-radius: 2px; }
+.nw-bar { height: 4px; border-radius: 2px; transition: width 600ms ease; }
+.nw-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; text-align: right; }
+.nw-pnl-cell { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-align: right; color: var(--text-3); }
+.nw-holdings { display: none; }
+.nw-row.open + .nw-holdings { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; padding: 10px 4px 14px 24px; border-bottom: 1px solid var(--border); }
+.nw-holding { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.nw-h-ticker { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: var(--text); letter-spacing: .06em; }
+.nw-h-shares { font-size: 10px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.nw-h-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); margin-top: 6px; }
+.nw-h-pnl { font-size: 10px; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.nw-alloc-ring { display: flex; gap: 24px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.nw-ring-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; flex: 1; min-width: 200px; }
+.nw-ring-seg { height: 100%; transition: width 600ms ease; }
+.nw-legend { display: flex; gap: 12px; flex-wrap: wrap; }
+.nw-legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; letter-spacing: .06em; }
+.nw-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── CALENDAR ───────────────────────────────────────────────────────────── */
+.cal-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 24px; }
+.cal-month { display: flex; flex-direction: column; gap: 6px; }
+.cal-month-hdr {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+  color: var(--text-2); letter-spacing: .12em; text-transform: uppercase;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.cal-days-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+.cal-dow {
+  font-size: 9px; color: var(--text-3); text-align: center; padding: 4px 0 6px;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: .08em;
+}
+.cal-day {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 2px 3px; border-radius: 6px; min-height: 36px;
+  transition: background 100ms;
+}
+.cal-day.empty { pointer-events: none; }
+.cal-day.today { background: rgba(111,200,214,.1); outline: 1px solid var(--signal); outline-offset: -1px; }
+.cal-day.has-events { cursor: default; }
+.cal-num {
+  font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace;
+  line-height: 1; margin-bottom: 3px;
+}
+.cal-day.today .cal-num { color: var(--signal); font-weight: 700; }
+.cal-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+.cal-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.cal-evt-label {
+  font-size: 8px; color: var(--text-3); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 100%; text-align: center;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: .04em; margin-top: 1px;
+}
+/* Up-next strip below calendar */
+.cal-upnext { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+/* ── VOICE ──────────────────────────────────────────────────────────────── */
+.voice-btn {
+  display: flex; align-items: center; gap: 8px; padding: 7px 14px;
+  border: 1px solid var(--border); border-radius: 10px; cursor: pointer;
+  background: var(--surface); color: var(--text-2); font-size: 12px;
+  transition: border-color 150ms, color 150ms; white-space: nowrap; flex-shrink: 0;
+}
+.voice-btn:hover { border-color: var(--signal); color: var(--signal); }
+.voice-btn.speaking { border-color: var(--signal); color: var(--signal); background: rgba(111,200,214,.07); }
+.voice-btn.loading { border-color: var(--border-2); color: var(--text-3); pointer-events: none; }
+.voice-icon { width: 14px; height: 14px; flex-shrink: 0; }
+.wave {
+  display: inline-flex; align-items: center; gap: 2px; height: 14px; flex-shrink: 0;
+}
+.wave span {
+  display: block; width: 2px; background: var(--signal); border-radius: 2px;
+  animation: wave 0.9s ease-in-out infinite;
+}
+.wave span:nth-child(1){height:4px;animation-delay:0s}
+.wave span:nth-child(2){height:10px;animation-delay:.15s}
+.wave span:nth-child(3){height:6px;animation-delay:.3s}
+.wave span:nth-child(4){height:12px;animation-delay:.1s}
+.wave span:nth-child(5){height:5px;animation-delay:.25s}
+@keyframes wave{0%,100%{transform:scaleY(1)}50%{transform:scaleY(0.3)}}
+
+/* ── ON-CHAIN ───────────────────────────────────────────────────────── */
+.oc-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr 1fr; gap: 0; margin-top: 2px; }
+.oc-section { padding: 2px 22px; border-right: 1px solid var(--border); }
+.oc-section:first-child { padding-left: 0; }
+.oc-section:last-child { padding-right: 0; border-right: none; }
+.oc-eyebrow {
+  font-size: 9px; color: var(--text-3); letter-spacing: .16em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace; font-weight: 500; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 7px;
+}
+.oc-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.oc-big { font-size: 28px; font-weight: 500; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.025em; line-height: 1; }
+.oc-sub { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; margin-top: 4px; margin-bottom: 14px; }
+.oc-row { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+.oc-row:last-child { border: none; }
+.oc-lbl { font-size: 10px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; letter-spacing: .08em; text-transform: uppercase; flex-shrink: 0; }
+.oc-val { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--text); text-align: right; }
+.oc-gauge { height: 6px; background: var(--surface-3); border-radius: 3px; margin: 10px 0 6px; overflow: hidden; }
+.oc-gauge-fill { height: 6px; border-radius: 3px; transition: width 700ms ease; }
+.oc-fee-row { display: grid; grid-template-columns: 60px 1fr auto; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+.oc-fee-row:last-child { border: none; }
+.oc-fee-speed { color: var(--text-3); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.oc-fee-bar-wrap { height: 3px; background: var(--surface-3); border-radius: 2px; }
+.oc-fee-bar { height: 3px; border-radius: 2px; }
+
+/* ── GOALS ──────────────────────────────────────────────────────────── */
+.goals-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 4px; }
+.goal-group { display: flex; flex-direction: column; gap: 8px; }
+.goal-group-label {
+  font-size: 9px; color: var(--text-3); letter-spacing: .16em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace; font-weight: 500;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.goal-item { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.goal-label { font-size: 11px; color: var(--text-2); margin-bottom: 6px; line-height: 1.3; }
+.goal-nums { display: flex; align-items: baseline; gap: 6px; margin-bottom: 7px; }
+.goal-current { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; color: var(--text); }
+.goal-target { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3); }
+.goal-bar-wrap { height: 3px; background: var(--surface-3); border-radius: 2px; margin-bottom: 5px; }
+.goal-bar { height: 3px; border-radius: 2px; transition: width 700ms ease; }
+.goal-meta { font-size: 9px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; display: flex; justify-content: space-between; }
+
+/* ── FINANCE PULSE ──────────────────────────────────────────────────── */
+.fp-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr 1.85fr 0.9fr;
+  gap: 0;
+  margin-top: 4px;
+}
+.fp-section {
+  padding: 2px 22px;
+  border-right: 1px solid var(--border);
+}
+.fp-section:first-child { padding-left: 0; }
+.fp-section:last-child { padding-right: 0; border-right: none; }
+.fp-eyebrow {
+  font-size: 9px; color: var(--text-3); letter-spacing: .16em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace; font-weight: 500;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 7px;
+}
+.fp-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.fp-val {
+  font-size: 26px; font-weight: 500; letter-spacing: -0.025em;
+  font-family: 'JetBrains Mono', monospace; line-height: 1;
+}
+.fp-sub {
+  font-size: 11px; font-family: 'JetBrains Mono', monospace;
+  color: var(--text-3); margin-top: 3px; margin-bottom: 8px;
+}
+.fp-price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+.fp-price-label { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--text-2); }
+.fp-chg { font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+.fp-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.fp-stat {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 7px; padding: 7px 9px;
+}
+.fp-stat .lbl {
+  font-size: 9px; color: var(--text-3); letter-spacing: .12em; text-transform: uppercase;
+  margin-bottom: 3px; font-family: 'JetBrains Mono', monospace;
+}
+.fp-stat .val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); line-height: 1.3; }
+.fp-group-label {
+  font-size: 9px; color: var(--text-3); letter-spacing: .14em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace; margin-bottom: 5px; margin-top: 12px;
+}
+.fp-group-label:first-child { margin-top: 0; }
+.fp-hrow {
+  display: grid; grid-template-columns: 48px 58px 1fr 1fr;
+  gap: 4px; align-items: center; padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.fp-hrow:last-child { border: none; }
+.fp-hticker { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11px; letter-spacing: .04em; }
+.fp-hshares { color: var(--text-3); font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+.fp-hprice { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-2); }
+.fp-hval { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-align: right; color: var(--text); font-weight: 500; }
+.fp-cash-input {
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 7px; padding: 7px 10px; color: var(--text);
+  width: 100%; margin-top: 8px; outline: none;
+}
+.fp-cash-input:focus { border-color: var(--signal); }
+.fp-cash-note { font-size: 10px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; line-height: 1.6; margin-top: 10px; }
+
+/* ── MISC ──────────────────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+.status-loading { color: var(--text-3); font-size: 11px; font-family: 'JetBrains Mono', monospace; letter-spacing: .06em; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── RAIL ──────────────────────────────────────────────────────── -->
+  <aside class="rail">
+    <div class="logo"></div>
+    <div class="nav-btn active" data-nav="home" title="Home" onclick="navSwitch('home')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12 12 4l9 8"/><path d="M5 10v10h14V10"/></svg>
+    </div>
+    <div class="nav-btn" data-nav="portfolio" title="Portfolio" onclick="navSwitch('portfolio')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 18l5-6 4 3 7-9"/><path d="M4 4v16h16"/></svg>
+    </div>
+    <div class="nav-btn" data-nav="intel" title="Intel Feed" onclick="navSwitch('intel')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="19" r="1.5"/><path d="M4 11a8 8 0 0 1 8 8M4 5a14 14 0 0 1 14 14"/></svg>
+    </div>
+    <div class="nav-btn" data-nav="content" title="Content" onclick="navSwitch('content')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4h10l4 4v12H6z"/><path d="M16 4v4h4"/></svg>
+    </div>
+    <div class="nav-btn" data-nav="faith" title="Faith" onclick="navSwitch('faith')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M2 12h20"/></svg>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-btn" id="theme-toggle" title="Toggle theme" onclick="toggleTheme()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </div>
+    <div class="nav-btn" title="Quick Add" onclick="openQuickAdd()" style="margin-bottom:4px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+    </div>
+    <div class="avatar" title="Profile" onclick="navSwitch('home')" style="cursor:pointer">JR</div>
+  </aside>
+
+  <!-- ── QUICK-ADD MODAL ─────────────────────────────────────────────── -->
+  <div id="qa-overlay" onclick="closeQuickAdd()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:900;backdrop-filter:blur(4px)"></div>
+  <div id="qa-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:901;background:var(--surface-1);border:1px solid var(--border-2);border-radius:14px;padding:24px;width:420px;max-width:90vw">
+    <div style="font-size:11px;letter-spacing:.1em;color:var(--text-3);text-transform:uppercase;margin-bottom:16px">Quick Add</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="qa-tab active" data-tab="idea" onclick="qaTab('idea')">💡 Video Idea</button>
+      <button class="qa-tab" data-tab="intel" onclick="qaTab('intel')">📡 Intel Signal</button>
+      <button class="qa-tab" data-tab="note" onclick="qaTab('note')">📝 Note</button>
+    </div>
+
+    <!-- Idea form -->
+    <div id="qa-idea" class="qa-form">
+      <textarea id="qa-idea-text" placeholder="Describe the video idea…" rows="3"
+        style="width:100%;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:none;box-sizing:border-box"></textarea>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px">This will kick off vault creation + full research + script pipeline.</div>
+      <button onclick="qaSubmitIdea()" style="margin-top:12px;width:100%;padding:10px;background:var(--signal);color:#0a0f14;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+        → Capture + Build Brief
+      </button>
+    </div>
+
+    <!-- Intel form -->
+    <div id="qa-intel" class="qa-form" style="display:none">
+      <input id="qa-intel-source" placeholder="@source (e.g. @woonomic)" type="text"
+        style="width:100%;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:var(--text);font-size:13px;margin-bottom:8px;box-sizing:border-box">
+      <textarea id="qa-intel-signal" placeholder="Signal text…" rows="2"
+        style="width:100%;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:none;box-sizing:border-box"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <select id="qa-intel-cat" style="flex:1;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:8px;color:var(--text);font-size:12px">
+          <option value="macro">macro</option>
+          <option value="trade">trade</option>
+          <option value="content">content</option>
+        </select>
+        <button onclick="qaSubmitIntel()" style="flex:2;padding:8px;background:var(--signal);color:#0a0f14;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+          → Log Signal
+        </button>
+      </div>
+    </div>
+
+    <!-- Note form -->
+    <div id="qa-note" class="qa-form" style="display:none">
+      <textarea id="qa-note-text" placeholder="Quick note for the inbox…" rows="4"
+        style="width:100%;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:none;box-sizing:border-box"></textarea>
+      <button onclick="qaSubmitNote()" style="margin-top:12px;width:100%;padding:10px;background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+        → Save to Inbox
+      </button>
+    </div>
+    <div id="qa-status" style="margin-top:10px;font-size:12px;color:var(--positive);min-height:18px;text-align:center"></div>
+  </div>
+
+  <!-- ── MAIN ──────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="greeting">
+        <span class="pulse"></span>
+        <h1 id="greeting">Good morning, Jaiden.</h1>
+        <span class="day mono" id="datetime">FRI · 16 MAY 2026</span>
+      </div>
+      <div class="cmd">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+        Ask AEGIS or search vault…
+        <span class="kbd">⌘K</span>
+      </div>
+      <div class="topbar-right">
+        <span class="pill" id="btc-pill"><span style="color:var(--text-2)">BTC</span>&nbsp;<span class="val" id="btc-price">—</span>&nbsp;<span class="val" id="btc-chg">—</span></span>
+        <span class="pill" id="mstr-pill"><span style="color:var(--text-2)">MSTR</span>&nbsp;<span class="val" id="mstr-price">—</span>&nbsp;<span class="val" id="mstr-chg">—</span></span>
+        <span class="pill">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+          Jordan · UTC+3
+        </span>
+      </div>
+    </div>
+
+    <!-- CANVAS -->
+    <div class="canvas">
+
+      <!-- ── 01 OPERATOR ─────────────────────────────────────────── -->
+      <section class="card c-3" data-section="home portfolio">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--signal)"></span>
+            01 // Operator
+          </div>
+          <div class="online-badge">Online</div>
+        </div>
+        <div class="op-head">
+          <div class="op-avatar">JR</div>
+          <div class="op-info">
+            <div class="name">Jaiden D. Rabatin</div>
+            <div class="role">1LT, AD · LCHR PLT LDR</div>
+            <div class="role" style="margin-top:2px">Camp Mudaysis · Jordan</div>
+          </div>
+        </div>
+        <div class="op-stats">
+          <div class="op-stat">
+            <div class="lbl">Status</div>
+            <div class="val">Deployed <span>· Active</span></div>
+          </div>
+          <div class="op-stat">
+            <div class="lbl">Mission</div>
+            <div class="val">Op SPARTAN <span>SHIELD</span></div>
+          </div>
+          <div class="op-stat" style="grid-column:span 2">
+            <div class="lbl">Today's focus</div>
+            <div class="val" id="op-focus" style="font-size:12px">Loading inbox…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 02 SESSION / PRIORITIES ────────────────────────────── -->
+      <section class="card c-5" data-section="home">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--signal)"></span>
+            02 // Priorities
+          </div>
+          <div class="card-meta" id="prio-meta">From inbox</div>
+        </div>
+        <div class="prio-list" id="prio-list">
+          <div class="skeleton s3"></div>
+          <div class="skeleton s2"></div>
+          <div class="skeleton s3"></div>
+        </div>
+      </section>
+
+      <!-- ── 07 NET WORTH (pie) ────────────────────────────────── -->
+      <section class="card c-4" data-section="home portfolio">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--positive)"></span>
+            03 // Net Worth
+          </div>
+          <div class="card-meta" id="nw-meta">All accounts</div>
+        </div>
+        <!-- Donut — centered, full width -->
+        <div style="display:flex;justify-content:center;margin:6px 0 18px;">
+          <div style="position:relative;width:180px;height:180px;">
+            <svg width="180" height="180" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="37" fill="none" stroke="var(--surface-3)" stroke-width="11"/>
+              <g id="nw-pie-segs" transform="rotate(-90 50 50)"></g>
+            </svg>
+            <div style="position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none;">
+              <div>
+                <div id="nw-pie-total" style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600;letter-spacing:-0.03em;line-height:1">—</div>
+                <div style="font-size:8px;color:var(--text-3);letter-spacing:.14em;text-transform:uppercase;margin-top:4px;font-family:'JetBrains Mono',monospace">TOTAL</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Legend 2-col grid -->
+        <div id="nw-pie-legend" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;">
+          <div class="skeleton s3" style="height:32px;border-radius:7px"></div>
+          <div class="skeleton s2" style="height:32px;border-radius:7px"></div>
+          <div class="skeleton s3" style="height:32px;border-radius:7px"></div>
+          <div class="skeleton s2" style="height:32px;border-radius:7px"></div>
+        </div>
+        <div id="nw-pnl" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-3);"></div>
+      </section>
+
+      <!-- ── 03 FINANCIAL PULSE ────────────────────────────────── -->
+      <section class="card c-12" data-section="home portfolio">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--positive)"></span>
+            04 // Financial Pulse
+          </div>
+          <div class="card-meta" id="fp-meta">Live · All accounts</div>
+        </div>
+
+        <div class="fp-grid">
+
+          <!-- BTC Stack -->
+          <div class="fp-section">
+            <div class="fp-eyebrow">
+              <span class="fp-dot" style="background:var(--warning)"></span>
+              ₿ BTC Stack · Self-custody
+            </div>
+            <div class="fp-val" id="fp-btc-val">—</div>
+            <div class="fp-sub" id="fp-btc-sub">0.58125823 BTC</div>
+            <div class="fp-price-row">
+              <span class="fp-price-label" id="fp-btc-price">—</span>
+              <span class="fp-chg" id="fp-btc-chg">—</span>
+            </div>
+            <div class="fp-stats">
+              <div class="fp-stat">
+                <div class="lbl">Stack</div>
+                <div class="val" id="fp-btc-stack">0.5813 BTC</div>
+              </div>
+              <div class="fp-stat">
+                <div class="lbl">Avg Cost</div>
+                <div class="val">$80,673</div>
+              </div>
+              <div class="fp-stat">
+                <div class="lbl">P&amp;L</div>
+                <div class="val" id="fp-btc-pnl">—</div>
+              </div>
+              <div class="fp-stat">
+                <div class="lbl">P&amp;L %</div>
+                <div class="val" id="fp-btc-pnlpct">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MSTR Roth IRA -->
+          <div class="fp-section">
+            <div class="fp-eyebrow">
+              <span class="fp-dot" style="background:var(--violet)"></span>
+              MSTR · Roth IRA
+            </div>
+            <div class="fp-val" id="fp-mstr-val">—</div>
+            <div class="fp-sub">84 shares · Robinhood</div>
+            <div class="fp-price-row">
+              <span class="fp-price-label" id="fp-mstr-price">—</span>
+              <span class="fp-chg" id="fp-mstr-chg">—</span>
+            </div>
+
+            <!-- mNAV monitor -->
+            <div style="border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:8px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;color:var(--text-3);letter-spacing:.14em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;font-weight:500;">mNAV Multiple</div>
+                <a href="https://www.strategy.com/" target="_blank" style="font-size:9px;color:var(--signal);text-decoration:none;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;opacity:.8;">↗ strategy.com</a>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">
+                <div id="fp-mnav-val" style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;letter-spacing:-0.025em;line-height:1;">—</div>
+                <div id="fp-mnav-status" style="font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--text-3);">—</div>
+              </div>
+              <!-- Gauge: 0–5× range, rotate marker at 4× -->
+              <div style="position:relative;margin-bottom:4px;">
+                <div style="height:5px;background:var(--surface-3);border-radius:3px;overflow:visible;position:relative;">
+                  <div id="fp-mnav-bar" style="height:5px;border-radius:3px;max-width:100%;transition:width 700ms ease;width:0%;"></div>
+                  <div style="position:absolute;top:-5px;left:80%;width:1.5px;height:15px;background:var(--negative);opacity:.5;border-radius:1px;"></div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-4);font-family:'JetBrains Mono',monospace;letter-spacing:.07em;margin-top:5px;">
+                <span>0×</span><span>1×</span><span>2×</span><span>3×</span><span style="color:rgba(230,128,120,.5)">4× ROTATE</span>
+              </div>
+            </div>
+
+            <div class="fp-stats">
+              <div class="fp-stat">
+                <div class="lbl">BTC Held</div>
+                <div class="val" id="fp-mnav-btc">—</div>
+              </div>
+              <div class="fp-stat">
+                <div class="lbl">BTC / Share</div>
+                <div class="val" id="fp-mnav-bps">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- M1 Holdings -->
+          <div class="fp-section">
+            <div class="fp-eyebrow">
+              <span class="fp-dot" style="background:var(--signal)"></span>
+              Equities · Taxable · Robinhood
+            </div>
+            <div class="fp-group-label">AI Bottlenecks + S&P</div>
+            <div id="fp-ai-rows">
+              <div class="skeleton s3" style="height:22px;margin:3px 0"></div>
+              <div class="skeleton s2" style="height:22px;margin:3px 0"></div>
+            </div>
+          </div>
+
+          <!-- Cash Reserves -->
+          <div class="fp-section">
+            <div class="fp-eyebrow">
+              <span class="fp-dot" style="background:var(--positive)"></span>
+              Cash Reserves
+            </div>
+            <div class="fp-val" id="fp-cash-total">—</div>
+            <div class="fp-sub">Fixed income · Par value</div>
+            <div class="fp-group-label" style="margin-top:12px">SATA · STRC · Brokerage</div>
+            <div id="fp-fi-rows">
+              <div class="skeleton s3" style="height:22px;margin:3px 0"></div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── 04 BITCOIN ON-CHAIN ──────────────────────────────────── -->
+      <section class="card c-12" data-section="home portfolio">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--warning)"></span>
+            05 // Bitcoin — On-Chain Data
+          </div>
+          <div class="card-meta" id="oc-meta">Raw blockchain · no narrative</div>
+        </div>
+        <div class="oc-grid">
+
+          <!-- Fear & Greed -->
+          <div class="oc-section">
+            <div class="oc-eyebrow"><span class="oc-dot" style="background:var(--warning)"></span>Sentiment</div>
+            <div class="oc-big" id="oc-fng-val">—</div>
+            <div class="oc-sub" id="oc-fng-label">Fear & Greed</div>
+            <div class="oc-gauge"><div class="oc-gauge-fill" id="oc-fng-bar" style="width:0%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-4);font-family:'JetBrains Mono',monospace;letter-spacing:.07em;">
+              <span>FEAR</span><span style="text-align:center">NEUTRAL</span><span>GREED</span>
+            </div>
+          </div>
+
+          <!-- Network Security -->
+          <div class="oc-section">
+            <div class="oc-eyebrow"><span class="oc-dot" style="background:var(--signal)"></span>Network Security</div>
+            <div class="oc-row">
+              <span class="oc-lbl">Hash Rate</span>
+              <span class="oc-val" id="oc-hash">—</span>
+            </div>
+            <div class="oc-row">
+              <span class="oc-lbl">Difficulty</span>
+              <span class="oc-val" id="oc-diff">—</span>
+            </div>
+            <div class="oc-row">
+              <span class="oc-lbl">Next Adj.</span>
+              <span class="oc-val" id="oc-adj">—</span>
+            </div>
+            <div class="oc-row">
+              <span class="oc-lbl">Block Time</span>
+              <span class="oc-val" id="oc-btime">—</span>
+            </div>
+          </div>
+
+          <!-- Chain Activity -->
+          <div class="oc-section">
+            <div class="oc-eyebrow"><span class="oc-dot" style="background:var(--positive)"></span>Chain Activity · 24h</div>
+            <div class="oc-row">
+              <span class="oc-lbl">Transactions</span>
+              <span class="oc-val" id="oc-tx">—</span>
+            </div>
+            <div class="oc-row">
+              <span class="oc-lbl">On-chain Vol.</span>
+              <span class="oc-val" id="oc-vol">—</span>
+            </div>
+            <div class="oc-row">
+              <span class="oc-lbl">Block Height</span>
+              <span class="oc-val" id="oc-height">—</span>
+            </div>
+            <div class="oc-row">
+              <span class="oc-lbl">Supply</span>
+              <span class="oc-val" id="oc-supply">—</span>
+            </div>
+          </div>
+
+          <!-- Mempool Fees -->
+          <div class="oc-section">
+            <div class="oc-eyebrow"><span class="oc-dot" style="background:var(--violet)"></span>Mempool Fees · sat/vB</div>
+            <div class="oc-fee-row">
+              <span class="oc-fee-speed">Fast</span>
+              <div class="oc-fee-bar-wrap"><div class="oc-fee-bar" id="oc-fee-fast-bar" style="background:var(--negative);width:0%"></div></div>
+              <span id="oc-fee-fast" style="font-family:'JetBrains Mono',monospace;font-size:12px">—</span>
+            </div>
+            <div class="oc-fee-row">
+              <span class="oc-fee-speed">Medium</span>
+              <div class="oc-fee-bar-wrap"><div class="oc-fee-bar" id="oc-fee-mid-bar" style="background:var(--warning);width:0%"></div></div>
+              <span id="oc-fee-mid" style="font-family:'JetBrains Mono',monospace;font-size:12px">—</span>
+            </div>
+            <div class="oc-fee-row">
+              <span class="oc-fee-speed">Slow</span>
+              <div class="oc-fee-bar-wrap"><div class="oc-fee-bar" id="oc-fee-slow-bar" style="background:var(--positive);width:0%"></div></div>
+              <span id="oc-fee-slow" style="font-family:'JetBrains Mono',monospace;font-size:12px">—</span>
+            </div>
+            <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);">
+              <div class="oc-row" style="border:none;padding:0;">
+                <span class="oc-lbl">MVRV</span>
+                <span class="oc-val" id="oc-mvrv" style="color:var(--text-3)">—</span>
+              </div>
+              <div style="font-size:9px;color:var(--text-4);font-family:'JetBrains Mono',monospace;margin-top:3px;text-align:right;" id="oc-mvrv-note">add GLASSNODE_API_KEY to .env</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── 05 GOALS ───────────────────────────────────────────── -->
+      <section class="card c-12" data-section="home portfolio">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--signal)"></span>
+            06 // Goals &amp; Progress
+          </div>
+          <div class="card-meta" id="goals-meta">From vault · goals.md</div>
+        </div>
+        <div class="goals-grid" id="goals-grid">
+          <div class="skeleton s3" style="height:80px;border-radius:8px"></div>
+          <div class="skeleton s2" style="height:80px;border-radius:8px"></div>
+          <div class="skeleton s3" style="height:80px;border-radius:8px"></div>
+          <div class="skeleton s2" style="height:80px;border-radius:8px"></div>
+        </div>
+      </section>
+
+      <!-- ── 06 X INTELLIGENCE ──────────────────────────────────── -->
+      <section class="card c-6" data-section="home intel">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--violet)"></span>
+            07 // Signal — X Intelligence
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="card-meta" id="intel-meta">Loading…</div>
+            <button id="intel-sync-btn" onclick="syncIntel()" style="font-size:10px;font-family:inherit;background:var(--surface-3);border:1px solid var(--border-2);color:var(--text-2);border-radius:4px;padding:2px 8px;cursor:pointer;letter-spacing:.04em" title="Fetch new tweets from monitored accounts">Sync X</button>
+          </div>
+        </div>
+        <div class="feed" id="intel-feed">
+          <div class="skeleton" style="margin:8px 0"></div>
+          <div class="skeleton s2" style="margin:4px 0"></div>
+          <div class="skeleton s3" style="margin:4px 0"></div>
+        </div>
+
+        <!-- ── Reading Feed ───────────────────────────────────────── -->
+        <div style="margin-top:16px;border-top:1px solid var(--border-1);padding-top:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:10px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;">Suggested Reading</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <select id="reading-days" onchange="loadReadingFeed()" style="font-size:10px;background:var(--surface-2);border:1px solid var(--border-2);border-radius:4px;padding:2px 6px;color:var(--text-2)">
+                <option value="3">3 days</option>
+                <option value="7" selected>7 days</option>
+                <option value="14">14 days</option>
+              </select>
+              <button onclick="loadReadingFeed()" style="font-size:10px;padding:2px 8px;background:var(--surface-2);border:1px solid var(--border-2);border-radius:4px;color:var(--text-2);cursor:pointer">↻ Refresh</button>
+            </div>
+          </div>
+
+          <!-- Tab strip -->
+          <div style="display:flex;gap:6px;margin-bottom:10px;" id="reading-tabs">
+            <button class="reading-tab active" data-tab="articles" onclick="readingTab('articles')">Articles</button>
+            <button class="reading-tab" data-tab="queue" onclick="readingTab('queue')">Vault Queue</button>
+            <button class="reading-tab" data-tab="ingested" onclick="readingTab('ingested')">In Vault</button>
+          </div>
+
+          <div id="reading-articles" class="reading-pane"></div>
+          <div id="reading-queue-pane" class="reading-pane" style="display:none"></div>
+          <div id="reading-ingested" class="reading-pane" style="display:none"></div>
+        </div>
+      </section>
+
+      <!-- ── 05 CONTENT PIPELINE ───────────────────────────────── -->
+      <section class="card c-6" data-section="home content">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--warning)"></span>
+            08 // Content Pipeline
+          </div>
+          <div class="card-meta" id="content-meta">In flight</div>
+        </div>
+        <div class="pipeline" id="pipeline">
+          <div class="skeleton" style="margin:4px 0"></div>
+          <div class="skeleton s3" style="margin:4px 0"></div>
+        </div>
+
+        <!-- Suggested Ideas sub-section -->
+        <div style="margin-top:14px;border-top:1px solid var(--border-1);padding-top:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:10px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;">AEGIS Suggestions</span>
+            <button id="suggest-btn" onclick="loadSuggestions()" style="font-size:10px;padding:3px 8px;background:var(--surface-2);border:1px solid var(--border-2);border-radius:4px;color:var(--text-2);cursor:pointer;">
+              ↻ Scan Niche
+            </button>
+          </div>
+          <div id="suggestions-list" style="color:var(--text-3);font-size:11px;padding:4px 0;">
+            Hit "Scan Niche" to surface 5 fresh video ideas from YouTube trends.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 06 FAITH ──────────────────────────────────────────── -->
+      <section class="card c-12" data-section="home faith">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--warning)"></span>
+            09 // Scripture · Prayer · Ministry
+          </div>
+          <div class="card-meta" id="faith-meta">Daily anchor</div>
+        </div>
+        <div class="faith-grid">
+
+          <div class="faith-col">
+            <div class="faith-eyebrow">Verse for the day</div>
+            <blockquote class="verse">"Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God."</blockquote>
+            <div class="verse-ref">PHILIPPIANS 4:6 · NIV</div>
+          </div>
+
+          <div class="faith-col">
+            <div class="faith-eyebrow">Prayer focus</div>
+            <ul class="faith-list">
+              <li>Wisdom and calm in the operational environment — that God guards my mind.</li>
+              <li>The Soldiers in my section — their families at home.</li>
+              <li>The Bitcoin thesis — that my conviction stays rooted in truth, not greed.</li>
+              <li>The YouTube channel — that it serves people, not just metrics.</li>
+            </ul>
+          </div>
+
+          <div class="faith-col">
+            <div class="faith-eyebrow">Ministry</div>
+            <ul class="faith-list ministry">
+              <li><span class="m-when">SUN</span><span>Chapel service — attend if not on duty</span></li>
+              <li><span class="m-when">ONGOING</span><span>Ezekiel 33 watchman role — speak truth in the unit</span></li>
+              <li><span class="m-when">UPCOMING</span><span>Jeremiah 32 lesson — rational action in irrational world</span></li>
+              <li><span class="m-when">CONTENT</span><span>Faith + finance + Bitcoin axis — YouTube niche development</span></li>
+            </ul>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── 08 CALENDAR ───────────────────────────────────────── -->
+      <section class="card c-12" data-section="home">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--violet)"></span>
+            10 // Horizon · Calendar
+          </div>
+          <div class="card-meta" id="horizon-meta">MAY → AUG 2026 · DEPLOYMENT WINDOW</div>
+        </div>
+        <div style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace;letter-spacing:.1em;margin-bottom:14px;display:flex;gap:16px;">
+          <span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--signal);margin-right:5px;vertical-align:middle"></span>Travel</span>
+          <span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warning);margin-right:5px;vertical-align:middle"></span>Bitcoin / Goals</span>
+          <span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--violet);margin-right:5px;vertical-align:middle"></span>Content</span>
+          <span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--positive);margin-right:5px;vertical-align:middle"></span>Milestone</span>
+        </div>
+        <div class="cal-grid" id="cal-grid">
+          <div class="skeleton s3" style="height:200px"></div>
+        </div>
+        <div class="cal-upnext" id="upnext">
+          <div class="up-card"><div class="skeleton s3"></div><div class="skeleton s2" style="margin-top:8px"></div></div>
+          <div class="up-card"><div class="skeleton s3"></div><div class="skeleton s2" style="margin-top:8px"></div></div>
+          <div class="up-card"><div class="skeleton s3"></div><div class="skeleton s2" style="margin-top:8px"></div></div>
+          <div class="up-card"><div class="skeleton s3"></div><div class="skeleton s2" style="margin-top:8px"></div></div>
+        </div>
+      </section>
+
+      <!-- ── AEGIS COMPOSER ─────────────────────────────────────── -->
+      <div class="composer">
+        <div class="glyph">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l8 4-8 4-8-4 8-4z"/><path d="M4 11l8 4 8-4M4 15l8 4 8-4"/></svg>
+        </div>
+        <div class="ask" id="composer-text">
+          <b>AEGIS:</b> Standing by.
+        </div>
+        <div class="chips">
+          <button class="voice-btn" id="brief-btn" onclick="runBrief()">
+            <svg class="voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+            Run brief
+          </button>
+          <span class="chip" onclick="openVault()">Open vault</span>
+          <span class="chip" onclick="refreshData()">Refresh data</span>
+        </div>
+      </div>
+      <audio id="aegis-audio" style="display:none"></audio>
+
+    </div><!-- /canvas -->
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:7777';
+
+// ── Clock ──────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const day = days[now.getDay()];
+  const date = String(now.getDate()).padStart(2,'0');
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  // Jordan is UTC+3
+  const jordan = new Date(now.getTime() + 3*3600000);
+  const jh = String(jordan.getUTCHours()).padStart(2,'0');
+  const jm = String(jordan.getUTCMinutes()).padStart(2,'0');
+  document.getElementById('datetime').textContent = `${day} · ${date} ${month} ${year} · ${jh}:${jm} AST`;
+
+  const h = jordan.getUTCHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = `${greet}, Jaiden.`;
+}
+setInterval(updateClock, 30000);
+updateClock();
+
+// ── Portfolio (topbar pills only) ──────────────────────────────────────
+async function loadPortfolio() {
+  try {
+    const r = await fetch(`${API}/api/portfolio`);
+    const j = await r.json();
+    if (!j.ok) return;
+    const prices = j.data.prices;
+
+    if (prices['BTC-USD']) {
+      const btc = prices['BTC-USD'];
+      document.getElementById('btc-price').textContent = `$${btc.price.toLocaleString()}`;
+      const chgEl = document.getElementById('btc-chg');
+      chgEl.textContent = btc.change || '';
+      if (btc.change) {
+        const up = !btc.change.startsWith('-');
+        chgEl.className = 'val ' + (up ? 'up' : 'dn');
+      }
+    }
+
+    if (prices['MSTR']) {
+      const mstr = prices['MSTR'];
+      document.getElementById('mstr-price').textContent = `$${mstr.price.toFixed(2)}`;
+      const chgEl = document.getElementById('mstr-chg');
+      chgEl.textContent = mstr.change || '';
+      if (mstr.change) {
+        const up = !mstr.change.startsWith('-');
+        chgEl.className = 'val ' + (up ? 'up' : 'dn');
+      }
+    }
+  } catch(e) { /* topbar stays at last value */ }
+}
+
+// ── Finance Pulse ──────────────────────────────────────────────────────
+async function loadFinancePulse() {
+  try {
+    const [nwr, pfr, cbr] = await Promise.all([
+      fetch(`${API}/api/networth`).then(r => r.json()),
+      fetch(`${API}/api/portfolio`).then(r => r.json()),
+      fetch(`${API}/api/coinbase/balance`).then(r => r.json()).catch(() => ({ok: false})),
+    ]);
+    if (!nwr.ok) return;
+
+    const d = nwr.data;
+    const prices = pfr.ok ? pfr.data.prices : {};
+    const fmt0 = n => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const fmt2 = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Live BTC balance from Coinbase (preferred) or fallback to positions.json
+    const liveBtc = cbr.ok && cbr.data?.btc_balance > 0 ? cbr.data.btc_balance : null;
+
+    // ── BTC Stack ───────────────────────────────────────────────────
+    const btcAcc = d.accounts.find(a => a.id === 'btc');
+    if (btcAcc && btcAcc.holdings[0]) {
+      const h = btcAcc.holdings[0];
+      const btcAmt = liveBtc !== null ? liveBtc : h.shares;
+      const btcVal = btcAmt * h.price;
+
+      document.getElementById('fp-btc-val').textContent = `$${fmt0(btcVal)}`;
+      document.getElementById('fp-btc-sub').textContent = `${btcAmt.toFixed(8)} BTC${liveBtc !== null ? ' · live' : ''}`;
+      document.getElementById('fp-btc-price').textContent = `$${fmt0(h.price)} / BTC`;
+      document.getElementById('fp-btc-stack').textContent = `${btcAmt.toFixed(8)} BTC`;
+
+      // Store live BTC for goals bar
+      window._liveBtcBalance = btcAmt;
+
+      if (prices['BTC-USD']?.change) {
+        const p = prices['BTC-USD'];
+        const up = p.pct_change >= 0;
+        const el = document.getElementById('fp-btc-chg');
+        el.textContent = p.change;
+        el.style.color = up ? 'var(--positive)' : 'var(--negative)';
+      }
+
+      const costBasis = h.cost_basis || 0;
+      if (costBasis > 0) {
+        const pnl    = btcVal - costBasis;
+        const pnlPct = ((btcVal / costBasis - 1) * 100).toFixed(2);
+        const sign   = pnl >= 0 ? '+' : '';
+        const pnlEl  = document.getElementById('fp-btc-pnl');
+        pnlEl.textContent = `${sign}$${fmt0(Math.abs(pnl))}`;
+        pnlEl.style.color = pnl >= 0 ? 'var(--positive)' : 'var(--negative)';
+        const pctEl  = document.getElementById('fp-btc-pnlpct');
+        pctEl.textContent = `${sign}${pnlPct}%`;
+        pctEl.style.color = pnl >= 0 ? 'var(--positive)' : 'var(--negative)';
+      }
+    }
+
+    // ── MSTR Roth IRA ───────────────────────────────────────────────
+    const iraAcc = d.accounts.find(a => a.id === 'roth-ira');
+    if (iraAcc && iraAcc.holdings[0]) {
+      const h = iraAcc.holdings[0];
+      document.getElementById('fp-mstr-val').textContent = `$${fmt0(h.value)}`;
+      document.getElementById('fp-mstr-price').textContent = `$${fmt2(h.price)} / share`;
+
+      if (prices['MSTR']?.change) {
+        const p = prices['MSTR'];
+        const up = p.pct_change >= 0;
+        const el = document.getElementById('fp-mstr-chg');
+        el.textContent = p.change;
+        el.style.color = up ? 'var(--positive)' : 'var(--negative)';
+      }
+
+      // mNAV populated separately by loadMNAV()
+    }
+
+    // ── M1 / AI Bottlenecks ─────────────────────────────────────────
+    const rbhAcc = d.accounts.find(a => a.id === 'rh-taxable');
+    if (rbhAcc) {
+      document.getElementById('fp-ai-rows').innerHTML = rbhAcc.holdings.map(h => {
+        const p = prices[h.ticker];
+        const chgHtml = p ? (() => {
+          const up = p.pct_change >= 0;
+          return `<span style="color:${up?'var(--positive)':'var(--negative)'};font-family:'JetBrains Mono',monospace;font-size:10px">${p.change}</span>`;
+        })() : '';
+        return `<div class="fp-hrow">
+          <span class="fp-hticker">${h.ticker}</span>
+          <span class="fp-hshares">${h.shares}sh</span>
+          <span class="fp-hprice">$${h.price ? fmt2(h.price) : '—'}</span>
+          <span class="fp-hval">$${h.value ? fmt0(h.value) : '—'}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Cash Reserves (Fixed Income = SATA + STRC at par) ────────────
+    const fiAcc = d.accounts.find(a => a.id === 'fixed-income');
+    if (fiAcc) {
+      const cashTotal = fiAcc.value || 0;
+      document.getElementById('fp-cash-total').textContent = `$${fmt0(cashTotal)}`;
+      document.getElementById('fp-fi-rows').innerHTML = fiAcc.holdings.map(h => {
+        const pnlStr = h.pnl !== null
+          ? `<span style="color:${h.pnl>=0?'var(--positive)':'var(--negative)'}">${h.pnl>=0?'+':''}${h.pnl_pct}%</span>`
+          : '';
+        return `<div class="fp-hrow">
+          <span class="fp-hticker">${h.ticker}</span>
+          <span class="fp-hshares">${h.shares}sh</span>
+          <span class="fp-hprice">$${h.price ? fmt2(h.price) : '—'}</span>
+          <span class="fp-hval">$${h.value ? fmt0(h.value) : '—'} ${pnlStr}</span>
+        </div>`;
+      }).join('');
+    }
+
+    document.getElementById('fp-meta').textContent =
+      `Live · ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
+
+  } catch(e) {
+    console.error('Finance pulse:', e);
+  }
+}
+
+// ── Checkbox state (localStorage) ─────────────────────────────────────
+const CHECKED_KEY = 'aegis_checked_' + new Date().toDateString();
+function getChecked() {
+  try { return JSON.parse(localStorage.getItem(CHECKED_KEY) || '[]'); } catch { return []; }
+}
+function toggleChecked(key) {
+  const list = getChecked();
+  const idx = list.indexOf(key);
+  if (idx >= 0) list.splice(idx, 1); else list.push(key);
+  localStorage.setItem(CHECKED_KEY, JSON.stringify(list));
+}
+
+function makePrioItem(text, tag) {
+  const key = text.slice(0, 60);
+  const checked = getChecked().includes(key);
+  const doneClass = checked ? ' done' : '';
+  const tagHtml = tag ? `<div class="sub">${tag}</div>` : '';
+  return `<div class="prio${doneClass}" data-key="${key.replace(/"/g,'&quot;')}" onclick="handleCheck(this)">
+    <div class="check">
+      <svg class="check-mark" width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="var(--bg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
+    </div>
+    <div class="body">
+      <div class="label">${text}</div>
+      ${tagHtml}
+    </div>
+  </div>`;
+}
+
+function handleCheck(el) {
+  const key = el.dataset.key;
+  toggleChecked(key);
+  el.classList.toggle('done');
+}
+
+// ── Inbox / Priorities ─────────────────────────────────────────────────
+async function loadInbox() {
+  try {
+    const r = await fetch(`${API}/api/inbox`);
+    const j = await r.json();
+    const text = j.text || '';
+    const list = document.getElementById('prio-list');
+
+    // Parse sections
+    const sections = [];
+    let currentSection = null;
+    for (const line of text.split('\n')) {
+      const hdr = line.match(/^##\s+(.+)/);
+      if (hdr) { currentSection = { label: hdr[1].trim(), items: [] }; sections.push(currentSection); continue; }
+      if (currentSection && line.trim().match(/^[-*•]\s+\S/)) {
+        currentSection.items.push(line.replace(/^[-*•]\s+/, '').trim());
+      }
+    }
+
+    const allItems = sections.flatMap(s => s.items);
+    if (allItems.length === 0) {
+      list.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 4px;">Inbox is clear.</div>';
+      return;
+    }
+
+    // Render with section labels, limit to first 3 sections
+    let html = '';
+    let total = 0;
+    for (const sec of sections.slice(0, 3)) {
+      if (!sec.items.length) continue;
+      html += `<div class="prio-section-label">${sec.label}</div>`;
+      for (const item of sec.items) {
+        const isUrgent = /counsel|5988|overdue|urgent|sign/i.test(item);
+        const isBTC = /bitcoin|btc|stack|dca|custody|jade|collateral/i.test(item);
+        const isContent = /video|script|youtube|content|channel/i.test(item);
+        const tag = isUrgent ? '<span class="tag urgent">Urgent</span>' :
+                    isBTC ? '<span class="tag btc">Bitcoin</span>' :
+                    isContent ? '<span class="tag content">Content</span>' : '';
+        html += makePrioItem(item, tag);
+        total++;
+      }
+    }
+
+    list.innerHTML = html;
+    document.getElementById('prio-meta').textContent = `${total} items · from inbox`;
+
+    // Set focus to first unchecked item
+    const checked = getChecked();
+    const firstUnchecked = allItems.find(i => !checked.includes(i.slice(0,60)));
+    const focus = firstUnchecked || allItems[0];
+    document.getElementById('op-focus').textContent = focus.length > 42 ? focus.slice(0,42)+'…' : focus;
+
+  } catch(e) {
+    document.getElementById('prio-list').innerHTML = '<div class="skeleton s3"></div><div class="skeleton s2"></div>';
+  }
+}
+
+// ── X Intel ─────────────────────────────────────────────────────────────
+async function loadIntel() {
+  try {
+    const r = await fetch(`${API}/api/intel`);
+    const j = await r.json();
+    const entries = j.entries || [];
+    const feed = document.getElementById('intel-feed');
+
+    if (entries.length === 0) {
+      feed.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 4px;">No intel entries found. Click "Sync X" to fetch signals from monitored accounts.</div>';
+    } else {
+      const recent = entries.slice(-5).reverse();
+      feed.innerHTML = recent.map(e => {
+        const initials = e.source.replace('@','').slice(0,2).toUpperCase();
+        const catColor = {trade:'var(--positive)',macro:'var(--signal)',content:'var(--violet)'}[e.category] || 'var(--text-3)';
+        const why = e.category === 'trade' ? 'Trade signal · review against portfolio' :
+                    e.category === 'macro' ? 'Macro context · informs Bitcoin thesis' :
+                    'Content angle · add to pipeline';
+        return `<div class="post">
+          <div class="av">${initials}</div>
+          <div>
+            <div class="hd">
+              <b>${e.source}</b>
+              <span class="handle" style="color:var(--text-3)">${e.date}</span>
+              <span class="cat" style="color:${catColor}">${e.category}</span>
+            </div>
+            <div class="txt">${e.signal}</div>
+            <div class="why">${why}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Show last sync time
+    const meta = document.getElementById('intel-meta');
+    if (j.last_sync) {
+      const ago = _timeAgo(j.last_sync);
+      meta.textContent = `${entries.length} signals · synced ${ago}`;
+    } else {
+      meta.textContent = `${entries.length} signals · not yet synced`;
+    }
+  } catch(e) {
+    document.getElementById('intel-feed').innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 4px;">Server offline — start dashboard_server.py</div>';
+  }
+}
+
+async function syncIntel() {
+  const btn = document.getElementById('intel-sync-btn');
+  btn.textContent = 'Syncing…';
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API}/api/intel/sync`, {method:'POST'});
+    const j = await r.json();
+    if (j.ok) {
+      btn.textContent = `+${j.added} added`;
+      await loadIntel();
+    } else {
+      btn.textContent = j.error && j.error.includes('BEARER') ? 'No API key' : 'Error';
+    }
+  } catch(e) {
+    btn.textContent = 'Error';
+  }
+  setTimeout(() => { btn.textContent = 'Sync X'; btn.disabled = false; }, 3000);
+}
+
+function _timeAgo(isoStr) {
+  const d = new Date(isoStr);
+  const mins = Math.round((Date.now() - d) / 60000);
+  if (mins < 2)   return 'just now';
+  if (mins < 60)  return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24)   return `${hrs}h ago`;
+  return `${Math.round(hrs/24)}d ago`;
+}
+
+// ── Content Pipeline ────────────────────────────────────────────────────
+async function loadContent() {
+  const pipeline = document.getElementById('pipeline');
+  try {
+    const r = await fetch(`${API}/api/content`);
+    const j = await r.json();
+    const items = j.items || [];
+
+    const stageColor = {
+      idea:      'var(--text-3)',
+      outlined:  'var(--warning)',
+      scripted:  'var(--signal)',
+      scheduled: 'var(--violet)',
+      published: 'var(--positive)',
+      archived:  'var(--text-4)',
+    };
+
+    if (items.length === 0) {
+      pipeline.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 4px;">No ideas yet — send <b>/idea</b> on Telegram to capture one.</div>';
+      document.getElementById('content-meta').textContent = 'empty pipeline';
+      return;
+    }
+
+    const active = items.filter(i => !['published','archived'].includes(i.stage));
+    const published = items.filter(i => i.stage === 'published').length;
+
+    const VAULT_NAME = 'aegis_vault';
+    pipeline.innerHTML = active.slice(-6).map(i => {
+      const color      = stageColor[i.stage] || 'var(--text-3)';
+      const niche      = i.niche ? ` · ${i.niche}` : '';
+      const obsidianUrl = `obsidian://open?vault=${VAULT_NAME}&file=areas%2Fcontent%2F${encodeURIComponent(i.slug)}`;
+      const gdocBtn    = i.gdoc ? `<a href="${i.gdoc}" target="_blank" style="margin-left:6px;font-size:10px;color:var(--signal);text-decoration:none;opacity:.8" title="Open Google Doc">Docs ↗</a>` : '';
+
+      return `<div class="pipe-item" style="cursor:default">
+        <div class="pipe-stage" style="color:${color};border-color:${color};opacity:.9">${i.stage}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pipe-title">
+            <a href="${obsidianUrl}" style="color:inherit;text-decoration:none" title="Open in Obsidian">${i.title}</a>
+            ${gdocBtn}
+          </div>
+          <div class="pipe-meta">${i.platform}${niche}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const scripted = items.filter(i => i.stage === 'scripted').length;
+    const meta = [
+      `${items.length} idea${items.length !== 1 ? 's' : ''}`,
+      scripted ? `${scripted} scripted` : null,
+      published ? `${published} published` : null,
+    ].filter(Boolean).join(' · ');
+    document.getElementById('content-meta').textContent = meta;
+
+  } catch(e) {
+    pipeline.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 4px;">Server offline</div>';
+  }
+}
+
+// ── Reading Feed ─────────────────────────────────────────────────────────
+let _readingData = null;
+
+function readingTab(tab) {
+  document.querySelectorAll('.reading-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  ['articles','queue','ingested'].forEach(t => {
+    document.getElementById(`reading-${t === 'queue' ? 'queue-pane' : t}`).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+const NICHE_COLOR = {
+  'bitcoin':        { bg: 'rgba(247,147,26,.12)', color: '#f7931a' },
+  'credit':         { bg: 'rgba(111,200,214,.1)',  color: 'var(--signal)' },
+  'personal-finance': { bg: 'rgba(80,200,120,.1)', color: 'var(--positive)' },
+};
+
+async function loadReadingFeed() {
+  const days = document.getElementById('reading-days').value;
+  const arts  = document.getElementById('reading-articles');
+  const queue = document.getElementById('reading-queue-pane');
+  const ingest = document.getElementById('reading-ingested');
+  arts.innerHTML = '<span style="color:var(--text-3);font-size:11px">Fetching feeds…</span>';
+
+  try {
+    const r = await fetch(`${API}/api/reading/feed?days=${days}`);
+    const j = await r.json();
+    if (!j.ok) { arts.innerHTML = `<span style="color:var(--text-3);font-size:11px">Error: ${j.error}</span>`; return; }
+    _readingData = j;
+
+    // ── Articles tab ──
+    if (!j.articles?.length) {
+      arts.innerHTML = '<span style="color:var(--text-3);font-size:11px">No recent articles found — try extending the window.</span>';
+    } else {
+      arts.innerHTML = j.articles.slice(0, 12).map(a => {
+        const nc = NICHE_COLOR[a.niche] || { bg: 'rgba(255,255,255,.05)', color: 'var(--text-3)' };
+        return `<div class="reading-article">
+          <div class="reading-article-title"><a href="${a.url}" target="_blank">${a.title}</a></div>
+          <div class="reading-article-meta">
+            <span>${a.source}</span>
+            <span>·</span>
+            <span>${a.published}</span>
+            <span class="reading-niche-tag" style="background:${nc.bg};color:${nc.color}">${a.niche}</span>
+          </div>
+          ${a.summary ? `<div style="font-size:11px;color:var(--text-3);line-height:1.5;margin-top:2px">${a.summary.slice(0,120)}…</div>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    // ── Vault Queue tab ──
+    if (!j.queue?.length) {
+      queue.innerHTML = '<span style="color:var(--text-3);font-size:11px">Reading queue is empty.</span>';
+    } else {
+      queue.innerHTML = j.queue.map(q => `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border-1)">
+          <div style="font-size:12px;color:var(--text);font-weight:500">${q.file}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:2px">${q.domain} · Priority ${q.priority}</div>
+          ${q.notes ? `<div style="font-size:11px;color:var(--text-3);margin-top:3px;font-style:italic">${q.notes}</div>` : ''}
+        </div>`).join('');
+    }
+
+    // ── Ingested tab ──
+    if (!j.ingested?.length) {
+      ingest.innerHTML = '<span style="color:var(--text-3);font-size:11px">No sources in vault yet.</span>';
+    } else {
+      ingest.innerHTML = j.ingested.map(s => `
+        <div style="padding:7px 0;border-bottom:1px solid var(--border-1)">
+          <div style="font-size:12px;color:var(--text)">${s.title}</div>
+          ${s.tags.length ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${s.tags.join(' · ')}</div>` : ''}
+        </div>`).join('');
+    }
+
+  } catch(e) {
+    arts.innerHTML = `<span style="color:var(--text-3);font-size:11px">Offline — ${e.message}</span>`;
+  }
+}
+
+// ── Idea Suggestions ─────────────────────────────────────────────────────
+async function loadSuggestions(topic = '') {
+  const el  = document.getElementById('suggestions-list');
+  const btn = document.getElementById('suggest-btn');
+  btn.textContent = '⟳ Scanning…';
+  btn.disabled = true;
+  el.innerHTML = '<span style="color:var(--text-3)">Searching YouTube trends… (15-20s)</span>';
+
+  try {
+    const r = await fetch(`${API}/api/ideas/suggest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic }),
+    });
+    const j = await r.json();
+
+    if (!j.ok || !j.ideas?.length) {
+      el.innerHTML = '<span style="color:var(--text-3)">No ideas returned — check YouTube API key.</span>';
+      return;
+    }
+
+    const nicheEmoji = { bitcoin:'🟠', credit:'✈️', 'personal-finance':'💰', faith:'✝️', fitness:'💪', leadership:'🎯' };
+    el.innerHTML = j.ideas.map((idea, idx) => {
+      const emoji = nicheEmoji[idea.niche] || '💡';
+      const encodedIdea = encodeURIComponent(idea.title);
+      return `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border-1);${idx === j.ideas.length-1 ? 'border-bottom:none' : ''}">
+          <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px;">
+            <span>${emoji}</span>
+            <span style="color:var(--text-1);font-size:12px;font-weight:500;line-height:1.4">${idea.title}</span>
+          </div>
+          <div style="color:var(--text-3);font-size:11px;margin-left:18px;margin-bottom:4px;font-style:italic">"${idea.hook}"</div>
+          <div style="color:var(--text-3);font-size:10px;margin-left:18px;line-height:1.4">${idea.why}</div>
+          <button onclick="addIdeaToQueue('${idea.title.replace(/'/g,"\\'")}', '${idea.hook.replace(/'/g,"\\'")}')"
+            style="margin-top:5px;margin-left:18px;font-size:10px;padding:2px 8px;background:transparent;border:1px solid var(--border-2);border-radius:3px;color:var(--text-2);cursor:pointer">
+            + Add to Pipeline
+          </button>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    el.innerHTML = `<span style="color:var(--text-3)">Error: ${e.message}</span>`;
+  } finally {
+    btn.textContent = '↻ Scan Niche';
+    btn.disabled = false;
+  }
+}
+
+async function addIdeaToQueue(title, hook) {
+  try {
+    const r = await fetch(`${API}/api/content/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idea: `${title}. Hook: ${hook}` }),
+    });
+    const j = await r.json();
+    if (j.ok) {
+      await loadContent();
+      alert(`✓ "${title}" added to pipeline`);
+    } else {
+      alert(`Error: ${j.error}`);
+    }
+  } catch(e) {
+    alert(`Error: ${e.message}`);
+  }
+}
+
+// ── Composer / Latest Brief ─────────────────────────────────────────────
+async function loadComposer() {
+  const suggestions = [
+    "Bitcoin is down from your cost basis — next DCA window may be approaching. Check accumulation triggers in the portfolio page.",
+    "SSG Moore's initial counseling was generated. Review and sign before the 30-day window closes.",
+    "Admiral Paparo's Bitcoin node confirmation is live intel — this is your strongest content angle this week.",
+    "CLARITY Act floor vote is T−53 days. Position your content pipeline to own this window.",
+  ];
+  const idx = Math.floor(Date.now() / (1000 * 60 * 60)) % suggestions.length;
+  document.getElementById('composer-text').innerHTML = `<b>AEGIS:</b> ${suggestions[idx]}`;
+}
+
+// ── Net Worth (donut pie) ─────────────────────────────────────────────────
+const NW_COLOR_BY_ID = {
+  'btc':          'var(--warning)',
+  'roth-ira':     'var(--violet)',
+  'rh-taxable':   'var(--signal)',
+  'fixed-income': 'var(--positive)',
+};
+const NW_SHORT_NAME = {
+  'btc':          'BTC Stack',
+  'roth-ira':     'MSTR / Roth IRA',
+  'rh-taxable':   'Equities',
+  'fixed-income': 'Cash / Fixed Inc.',
+};
+
+async function loadNetWorth() {
+  try {
+    const r = await fetch(`${API}/api/networth`);
+    const j = await r.json();
+    if (!j.ok) return;
+    const d = j.data;
+
+    const fmt0 = n => n.toLocaleString('en-US', {maximumFractionDigits: 0});
+
+    // Center label: abbreviate for tight donut space
+    const totalLabel = d.total >= 100000
+      ? `$${(d.total / 1000).toFixed(1)}K`
+      : `$${fmt0(d.total)}`;
+    document.getElementById('nw-pie-total').textContent = totalLabel;
+    document.getElementById('nw-meta').textContent = `$${fmt0(d.total)} · live`;
+
+    // P&L footnote
+    if (d.pnl !== null) {
+      const sign = d.pnl >= 0 ? '+' : '';
+      const col = d.pnl >= 0 ? 'var(--positive)' : 'var(--negative)';
+      document.getElementById('nw-pnl').innerHTML =
+        `P&L <span style="color:${col}">${sign}$${fmt0(Math.abs(d.pnl))} (${sign}${d.pnl_pct}%)</span> <span style="color:var(--text-4)">on known basis</span>`;
+    }
+
+    // Donut segments
+    const R = 37, CIRC = 2 * Math.PI * R, GAP = 2;
+    let cum = 0;
+    document.getElementById('nw-pie-segs').innerHTML = d.accounts.map(acc => {
+      const color = NW_COLOR_BY_ID[acc.id] || 'var(--text-3)';
+      const len = Math.max(0, (acc.value / d.total) * CIRC - GAP);
+      const seg = `<circle cx="50" cy="50" r="${R}" fill="none"
+        stroke="${color}" stroke-width="12"
+        stroke-dasharray="${len.toFixed(2)} ${CIRC.toFixed(2)}"
+        stroke-dashoffset="${(-cum).toFixed(2)}" />`;
+      cum += len + GAP;
+      return seg;
+    }).join('');
+
+    // Legend — 2-column card grid
+    document.getElementById('nw-pie-legend').innerHTML = d.accounts.map(acc => {
+      const color = NW_COLOR_BY_ID[acc.id] || 'var(--text-3)';
+      const name  = NW_SHORT_NAME[acc.id] || acc.name;
+      const pct   = ((acc.value / d.total) * 100).toFixed(0);
+      return `<div style="background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <span style="width:7px;height:7px;border-radius:2px;background:${color};flex-shrink:0;display:inline-block"></span>
+          <span style="font-size:9px;color:var(--text-3);font-family:'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;">${name}</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;color:var(--text);">$${fmt0(acc.value)}</div>
+        <div style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace;margin-top:2px;">${pct}% of total</div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    document.getElementById('nw-pie-legend').innerHTML =
+      '<div style="color:var(--text-3);font-size:11px">Unavailable</div>';
+  }
+}
+
+// ── Calendar ─────────────────────────────────────────────────────────────
+const AEGIS_EVENTS = [
+  { start:'2026-05-25', summary:'0.5 BTC video · film', lane:'goal' },
+  { start:'2026-05-31', summary:'0.6 BTC milestone', lane:'goal' },
+  { start:'2026-06-07', summary:'SSG Moore counseling', lane:'milestone' },
+  { start:'2026-06-15', summary:'Channel launch', lane:'milestone' },
+  { start:'2026-07-08', summary:'CLARITY Act target', lane:'goal' },
+  { start:'2026-07-14', summary:'Promotion board prep', lane:'milestone' },
+  { start:'2026-08-15', summary:'Jade migration', lane:'goal' },
+  { start:'2026-08-25', summary:'NCOER season', lane:'milestone' },
+];
+
+const LANE_COLOR = {
+  travel:'var(--signal)', family:'var(--violet)',
+  milestone:'var(--positive)', goal:'var(--warning)',
+};
+const MO_NAMES = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+const DAY_SHORT = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const DAY_LONG  = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const MO_SHORT  = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+function buildEventMap(calEvents) {
+  const map = {};
+  const all = [...AEGIS_EVENTS, ...(calEvents||[])];
+  for (const e of all) {
+    if (!map[e.start]) map[e.start] = [];
+    map[e.start].push(e);
+  }
+  return map;
+}
+
+function renderCalendar(eventMap) {
+  const todayStr = new Date().toISOString().slice(0,10);
+  const months = [
+    {y:2026,m:4},{y:2026,m:5},{y:2026,m:6},{y:2026,m:7}
+  ];
+  let html = '';
+  for (const {y,m} of months) {
+    const firstDow = new Date(y,m,1).getDay();
+    const daysInMo = new Date(y,m+1,0).getDate();
+    html += `<div class="cal-month">
+      <div class="cal-month-hdr">${MO_NAMES[m]} ${y}</div>
+      <div class="cal-days-grid">
+        ${DAY_SHORT.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+        ${Array(firstDow).fill('<div class="cal-day empty"></div>').join('')}`;
+    for (let d=1; d<=daysInMo; d++) {
+      const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = ds===todayStr;
+      const evs = eventMap[ds]||[];
+      const dots = evs.map(e=>`<span class="cal-dot" style="background:${LANE_COLOR[e.lane]||'var(--text-3)'}" title="${e.summary}"></span>`).join('');
+      // Show label for first event if space
+      const label = evs[0] ? `<span class="cal-evt-label" style="color:${LANE_COLOR[evs[0].lane]||'var(--text-3)'}">${evs[0].summary.slice(0,10)}</span>` : '';
+      html += `<div class="cal-day${isToday?' today':''}${evs.length?' has-events':''}">
+        <span class="cal-num">${d}</span>
+        <div class="cal-dots">${dots}</div>
+        ${label}
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+function renderUpNext(calEvents) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const all = [...AEGIS_EVENTS, ...(calEvents||[])];
+  const upcoming = all
+    .filter(e => new Date(e.start+'T00:00:00') >= today)
+    .sort((a,b)=>a.start.localeCompare(b.start))
+    .slice(0,4);
+
+  document.getElementById('upnext').innerHTML = upcoming.map(e => {
+    const d = new Date(e.start+'T00:00:00');
+    const du = Math.round((d - today) / 86400000);
+    const color = LANE_COLOR[e.lane]||'var(--text-3)';
+    return `<div class="up-card">
+      <div class="up-head">
+        <div class="up-date"><b>${d.getDate()}</b>${DAY_LONG[d.getDay()]} · ${MO_SHORT[d.getMonth()]}</div>
+        <div class="up-countdown">T−${du} d</div>
+      </div>
+      <div class="up-title">${e.icon?e.icon+' ':''}${e.summary}</div>
+      <div class="up-meta"><span class="ic" style="background:${color}"></span>${e.lane}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadCalendar() {
+  try {
+    const r = await fetch(`${API}/api/calendar`);
+    const j = await r.json();
+    const calEvs = j.ok ? (j.events||[]) : [];
+    const map = buildEventMap(calEvs);
+    renderCalendar(map);
+    renderUpNext(calEvs);
+    if (j.updated) {
+      const sync = new Date(j.updated);
+      document.getElementById('horizon-meta').textContent =
+        `MAY → AUG 2026 · synced ${sync.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+    }
+  } catch(e) {
+    renderCalendar(buildEventMap([]));
+    renderUpNext([]);
+  }
+}
+
+// ── Voice / AEGIS speak ───────────────────────────────────────────────────
+let currentAudio = null;
+let isSpeaking = false;
+
+async function speak(text) {
+  const btn = document.getElementById('brief-btn');
+  if (isSpeaking && currentAudio) {
+    currentAudio.pause(); currentAudio = null;
+    isSpeaking = false; setSpeakState('idle'); return;
+  }
+  setSpeakState('loading');
+  try {
+    const r = await fetch(`${API}/api/speak`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text})
+    });
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    currentAudio = new Audio(url);
+    currentAudio.onended = ()=>{ isSpeaking=false; setSpeakState('idle'); URL.revokeObjectURL(url); };
+    currentAudio.onerror = ()=>{ isSpeaking=false; setSpeakState('idle'); };
+    await currentAudio.play();
+    isSpeaking = true; setSpeakState('speaking');
+  } catch(e) {
+    setSpeakState('idle');
+    document.getElementById('composer-text').innerHTML = '<b>AEGIS:</b> Voice offline — check server.';
+  }
+}
+
+function setSpeakState(state) {
+  const btn = document.getElementById('brief-btn');
+  if (state === 'loading') {
+    btn.className='voice-btn loading';
+    btn.innerHTML=`<svg class="voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Generating…`;
+  } else if (state === 'speaking') {
+    btn.className='voice-btn speaking';
+    btn.innerHTML=`<div class="wave"><span></span><span></span><span></span><span></span><span></span></div> Speaking`;
+  } else {
+    btn.className='voice-btn';
+    btn.innerHTML=`<svg class="voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg> Run brief`;
+  }
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────
+async function runBrief() {
+  if (isSpeaking) { speak(''); return; }
+  setSpeakState('loading');
+  document.getElementById('composer-text').innerHTML = '<b>AEGIS:</b> Reading vault and market data…';
+  try {
+    const r = await fetch(`${API}/api/brief/live`);
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error);
+    document.getElementById('composer-text').innerHTML = `<b>AEGIS:</b> ${j.text.slice(0,200)}…`;
+    // Play the pre-generated audio file
+    setSpeakState('speaking');
+    const audio = new Audio(`${API}${j.audio}`);
+    currentAudio = audio; isSpeaking = true;
+    audio.onended = ()=>{ isSpeaking=false; setSpeakState('idle'); };
+    audio.onerror = ()=>{ isSpeaking=false; setSpeakState('idle'); };
+    audio.play();
+  } catch(e) {
+    setSpeakState('idle');
+    document.getElementById('composer-text').innerHTML = `<b>AEGIS:</b> Brief error — ${e.message}`;
+  }
+}
+
+function openVault() {
+  speak('Your vault is open in Obsidian. All intelligence, portfolio notes, and content pipeline are accessible.');
+  document.getElementById('composer-text').innerHTML = '<b>AEGIS:</b> Vault is at ~/Documents/aegis_vault — open in Obsidian for full access.';
+}
+function refreshData() {
+  speak('Refreshing market data.');
+  document.getElementById('composer-text').innerHTML = '<b>AEGIS:</b> Refreshing market data…';
+  loadPortfolio().then(() => {
+    document.getElementById('composer-text').innerHTML = '<b>AEGIS:</b> Market data updated.';
+  });
+}
+
+// ── On-Chain ─────────────────────────────────────────────────────────────
+async function loadOnchain() {
+  try {
+    const r = await fetch(`${API}/api/onchain`);
+    const j = await r.json();
+    if (!j.ok) return;
+    const d = j.data;
+
+    const fmt0 = n => Math.round(n).toLocaleString();
+    const updated = new Date(d.updated);
+    document.getElementById('oc-meta').textContent =
+      `Raw blockchain · ${updated.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
+
+    // Fear & Greed
+    const fng = d.fear_greed.value;
+    const fngColor = fng < 25 ? 'var(--negative)'
+                   : fng < 45 ? 'var(--warning)'
+                   : fng < 55 ? 'var(--text-2)'
+                   : fng < 75 ? 'var(--signal)'
+                   :             'var(--positive)';
+    document.getElementById('oc-fng-val').textContent  = fng;
+    document.getElementById('oc-fng-val').style.color  = fngColor;
+    document.getElementById('oc-fng-label').textContent = d.fear_greed.label;
+    const bar = document.getElementById('oc-fng-bar');
+    bar.style.width      = `${fng}%`;
+    bar.style.background = fngColor;
+
+    // Security
+    document.getElementById('oc-hash').textContent  = `${d.hash_rate_eh} EH/s`;
+    document.getElementById('oc-diff').textContent  = (d.difficulty / 1e12).toFixed(2) + ' T';
+    document.getElementById('oc-adj').textContent   = `${d.blocks_to_adj.toLocaleString()} blk · ~${d.days_to_adj}d`;
+    const btime = d.mins_per_block;
+    const btimeEl = document.getElementById('oc-btime');
+    btimeEl.textContent = `${btime} min`;
+    btimeEl.style.color = Math.abs(btime - 10) > 1 ? 'var(--warning)' : 'var(--text)';
+
+    // Activity
+    document.getElementById('oc-tx').textContent     = fmt0(d.tx_count_24h);
+    document.getElementById('oc-vol').textContent    = `$${(d.volume_usd_24h / 1e9).toFixed(2)}B`;
+    document.getElementById('oc-height').textContent = fmt0(d.block_height);
+    document.getElementById('oc-supply').textContent = `${d.supply_btc.toLocaleString()} BTC`;
+
+    // Fees — normalize bar widths relative to fast fee
+    const maxFee = Math.max(d.fee_fast_sat, 20);
+    document.getElementById('oc-fee-fast').textContent  = `${d.fee_fast_sat}`;
+    document.getElementById('oc-fee-mid').textContent   = `${d.fee_mid_sat}`;
+    document.getElementById('oc-fee-slow').textContent  = `${d.fee_slow_sat}`;
+    document.getElementById('oc-fee-fast-bar').style.width = `${Math.min(d.fee_fast_sat / maxFee * 100, 100)}%`;
+    document.getElementById('oc-fee-mid-bar').style.width  = `${Math.min(d.fee_mid_sat  / maxFee * 100, 100)}%`;
+    document.getElementById('oc-fee-slow-bar').style.width = `${Math.min(d.fee_slow_sat / maxFee * 100, 100)}%`;
+
+    // MVRV (optional)
+    if (d.mvrv) {
+      const mvrv = d.mvrv;
+      const mvrvc = mvrv < 1.5 ? 'var(--positive)'
+                  : mvrv < 2.5 ? 'var(--signal)'
+                  : mvrv < 3.5 ? 'var(--warning)'
+                  :               'var(--negative)';
+      document.getElementById('oc-mvrv').textContent   = `${mvrv.toFixed(3)}×`;
+      document.getElementById('oc-mvrv').style.color   = mvrvc;
+      document.getElementById('oc-mvrv-note').textContent = d.realized_price
+        ? `Realized $${fmt0(d.realized_price)}` : '';
+    }
+  } catch(e) { console.error('onchain:', e); }
+}
+
+// ── Goals ─────────────────────────────────────────────────────────────────
+async function updateGoal(label, target, by, newVal) {
+  const num = parseFloat(newVal);
+  if (isNaN(num)) return;
+  try {
+    const r = await fetch(`${API}/api/goals/update`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({label, target, by, current: num}),
+    });
+    const j = await r.json();
+    if (j.ok) loadGoals();
+  } catch(e) { console.error('goal update:', e); }
+}
+
+function makeEditable(el, item, current) {
+  // Swap display span for input on click
+  el.style.cursor = 'text';
+  el.title = 'Click to update';
+  el.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type  = 'number';
+    input.value = current;
+    input.step  = 'any';
+    input.style.cssText = 'width:70px;background:var(--surface-3);border:1px solid var(--signal);border-radius:3px;color:var(--text);font-family:inherit;font-size:inherit;padding:1px 4px;';
+    el.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const commit = () => {
+      if (input.value !== String(current)) {
+        updateGoal(item.label, item.target, item.by, input.value);
+      } else {
+        loadGoals();
+      }
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { loadGoals(); }
+    });
+  });
+}
+
+async function loadGoals() {
+  try {
+    const r = await fetch(`${API}/api/goals`);
+    const j = await r.json();
+    if (!j.ok || !j.groups.length) return;
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const groups = j.groups;
+    const grid   = document.getElementById('goals-grid');
+
+    // Build one column per group (up to 4)
+    grid.innerHTML = groups.slice(0, 4).map(g => {
+      const items = g.items.map(item => {
+        // Override BTC Stack current with live Coinbase balance if available
+        let current = item.current;
+        const isLiveBtc = item.label === 'BTC Stack' && window._liveBtcBalance != null;
+        if (isLiveBtc) current = window._liveBtcBalance;
+
+        const pct  = Math.min(current / item.target * 100, 100).toFixed(1) * 1;
+        const due  = new Date(item.by + 'T00:00:00');
+        const daysLeft = Math.round((due - today) / 86400000);
+        const overdue  = daysLeft < 0;
+        const barColor = pct >= 100 ? 'var(--positive)'
+                       : overdue    ? 'var(--negative)'
+                       : pct > 60   ? 'var(--signal)'
+                       :              'var(--warning)';
+
+        // Format numbers
+        const fmtNum = n => n >= 1000 ? `${(n/1000).toFixed(n >= 10000 ? 0 : 1)}K` : n % 1 !== 0 ? n.toFixed(8).replace(/0+$/, '') : n;
+        const currentLabel = fmtNum(current);
+        const targetLabel  = fmtNum(item.target);
+        const dueLabel     = overdue ? `${Math.abs(daysLeft)}d overdue` : `T−${daysLeft}d`;
+        const dueColor     = overdue ? 'var(--negative)' : daysLeft < 14 ? 'var(--warning)' : 'var(--text-3)';
+        const editHint     = isLiveBtc ? '' : ' title="Click to edit"';
+
+        const editableId = `goal-cur-${g.group.replace(/\W/g,'')}-${item.label.replace(/\W/g,'')}`;
+        return `<div class="goal-item">
+          <div class="goal-label">${item.label}</div>
+          <div class="goal-nums">
+            <span class="goal-current" id="${editableId}"${editHint}>${currentLabel}</span>
+            <span class="goal-target">/ ${targetLabel}</span>
+          </div>
+          <div class="goal-bar-wrap"><div class="goal-bar" style="width:${pct}%;background:${barColor}"></div></div>
+          <div class="goal-meta">
+            <span style="color:${barColor}">${pct}%</span>
+            <span style="color:${dueColor}">${dueLabel}</span>
+          </div>
+        </div>`;
+      });
+
+      // Wire up editable spans after render (store item refs for callback)
+      setTimeout(() => {
+        g.items.forEach((item, idx) => {
+          const isLiveBtc = item.label === 'BTC Stack' && window._liveBtcBalance != null;
+          if (isLiveBtc) return; // live from Coinbase — don't allow manual edit
+          const editableId = `goal-cur-${g.group.replace(/\W/g,'')}-${item.label.replace(/\W/g,'')}`;
+          const el = document.getElementById(editableId);
+          if (el) makeEditable(el, item, item.current);
+        });
+      }, 0);
+
+      return `<div class="goal-group">
+        <div class="goal-group-label">${g.group}</div>
+        ${items.join('')}
+      </div>`;
+    }).join('');
+
+    document.getElementById('goals-meta').textContent = `${groups.length} areas · click values to update`;
+  } catch(e) { console.error('goals:', e); }
+}
+
+// ── mNAV ─────────────────────────────────────────────────────────────────
+async function loadMNAV() {
+  try {
+    const r = await fetch(`${API}/api/mnav`);
+    const j = await r.json();
+    if (!j.ok) return;
+
+    const mnav = j.mnav;
+    if (mnav === null) return;
+
+    // Color thresholds
+    const color = mnav < 1.5 ? 'var(--positive)'
+                : mnav < 2.5 ? 'var(--signal)'
+                : mnav < 3.5 ? 'var(--warning)'
+                : mnav < 4.0 ? '#E8934A'
+                :               'var(--negative)';
+
+    const status = mnav >= 4.0 ? '⚠ ROTATE ZONE'
+                 : mnav >= 3.0 ? 'Elevated — watch'
+                 : mnav >= 2.0 ? 'Moderate premium'
+                 :               'Healthy premium';
+
+    document.getElementById('fp-mnav-val').textContent  = `${mnav.toFixed(2)}×`;
+    document.getElementById('fp-mnav-val').style.color  = color;
+    document.getElementById('fp-mnav-status').textContent = status;
+    document.getElementById('fp-mnav-status').style.color  = color;
+
+    // Gauge: 0–5× range → 0–100% width; rotate marker pre-placed at 80%
+    const pct = Math.min((mnav / 5) * 100, 100).toFixed(1);
+    const bar  = document.getElementById('fp-mnav-bar');
+    bar.style.width      = `${pct}%`;
+    bar.style.background = color;
+
+    // Stats
+    if (j.mstr_btc_held) {
+      const fmt = n => n >= 1000
+        ? `${(n / 1000).toFixed(1)}K`
+        : n.toLocaleString();
+      document.getElementById('fp-mnav-btc').textContent = fmt(j.mstr_btc_held) + ' BTC';
+    }
+    if (j.btc_per_share) {
+      document.getElementById('fp-mnav-bps').textContent = j.btc_per_share.toFixed(5);
+    }
+  } catch(e) { /* silent — mNAV is bonus data */ }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
+async function init() {
+  await Promise.all([
+    loadPortfolio(),
+    loadFinancePulse(),
+    loadMNAV(),
+    loadNetWorth(),
+    loadOnchain(),
+    loadGoals(),
+    loadInbox(),
+    loadIntel(),
+    loadReadingFeed(),
+    loadContent(),
+    loadComposer(),
+    loadCalendar(),
+  ]);
+  setInterval(() => { loadPortfolio(); loadFinancePulse(); loadMNAV(); loadNetWorth(); }, 5 * 60 * 1000);
+  setInterval(() => { loadOnchain(); loadGoals(); loadFinancePulse(); }, 15 * 60 * 1000);
+}
+init();
+
+// ── Nav section filter ────────────────────────────────────────────────
+function navSwitch(section) {
+  // Update active button
+  document.querySelectorAll('.nav-btn[data-nav]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.nav === section);
+  });
+
+  // Show/hide cards
+  document.querySelectorAll('.card[data-section]').forEach(card => {
+    const sections = card.dataset.section.split(' ');
+    card.classList.toggle('nav-hidden', !sections.includes(section));
+  });
+
+  // Scroll to top of main when switching
+  document.querySelector('.main').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Theme toggle ──────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('aegis-theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('theme-toggle');
+  btn.title = isLight ? 'Switch to dark mode' : 'Toggle theme';
+}
+// Restore saved theme
+if (localStorage.getItem('aegis-theme') === 'light') document.body.classList.add('light');
+
+// ── Quick-add modal ───────────────────────────────────────────────────
+function openQuickAdd() {
+  document.getElementById('qa-overlay').style.display = 'block';
+  document.getElementById('qa-modal').style.display = 'block';
+  document.getElementById('qa-status').textContent = '';
+  setTimeout(() => document.getElementById('qa-idea-text').focus(), 50);
+}
+function closeQuickAdd() {
+  document.getElementById('qa-overlay').style.display = 'none';
+  document.getElementById('qa-modal').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickAdd(); });
+
+function qaTab(tab) {
+  document.querySelectorAll('.qa-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.qa-form').forEach(f => f.style.display = 'none');
+  document.getElementById(`qa-${tab}`).style.display = 'block';
+  document.getElementById('qa-status').textContent = '';
+}
+
+async function qaSubmitIdea() {
+  const text = document.getElementById('qa-idea-text').value.trim();
+  if (!text) return;
+  const status = document.getElementById('qa-status');
+  status.style.color = 'var(--text-3)';
+  status.textContent = 'Creating + running content skill…';
+  try {
+    const r = await fetch(`${API}/api/content/add`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idea: text }),
+    });
+    const j = await r.json();
+    if (j.ok) {
+      status.style.color = 'var(--positive)';
+      status.textContent = `✓ "${j.data?.title || 'Idea'}" added to pipeline`;
+      document.getElementById('qa-idea-text').value = '';
+      await loadContent();
+      setTimeout(closeQuickAdd, 1800);
+    } else {
+      status.style.color = 'var(--warning)';
+      status.textContent = `Error: ${j.error}`;
+    }
+  } catch(e) {
+    status.style.color = 'var(--warning)';
+    status.textContent = `Error: ${e.message}`;
+  }
+}
+
+async function qaSubmitIntel() {
+  const source = document.getElementById('qa-intel-source').value.trim();
+  const signal = document.getElementById('qa-intel-signal').value.trim();
+  const cat    = document.getElementById('qa-intel-cat').value;
+  if (!source || !signal) { document.getElementById('qa-status').textContent = 'Fill in source + signal.'; return; }
+  const status = document.getElementById('qa-status');
+  try {
+    const r = await fetch(`${API}/api/intel/add`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source, signal, category: cat }),
+    });
+    const j = await r.json();
+    if (j.ok) {
+      status.style.color = 'var(--positive)';
+      status.textContent = '✓ Signal logged';
+      document.getElementById('qa-intel-source').value = '';
+      document.getElementById('qa-intel-signal').value = '';
+      setTimeout(closeQuickAdd, 1500);
+    } else {
+      status.style.color = 'var(--warning)';
+      status.textContent = `Error: ${j.error}`;
+    }
+  } catch(e) {
+    status.style.color = 'var(--warning)';
+    status.textContent = `Error: ${e.message}`;
+  }
+}
+
+async function qaSubmitNote() {
+  const text = document.getElementById('qa-note-text').value.trim();
+  if (!text) return;
+  const status = document.getElementById('qa-status');
+  // Notes go to inbox via a simple text append — reuse intel/add with a note category
+  try {
+    const r = await fetch(`${API}/api/intel/add`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source: '@dashboard', signal: text, category: 'note' }),
+    });
+    const j = await r.json();
+    if (j.ok) {
+      status.style.color = 'var(--positive)';
+      status.textContent = '✓ Saved to inbox';
+      document.getElementById('qa-note-text').value = '';
+      setTimeout(closeQuickAdd, 1500);
+    } else {
+      status.style.color = 'var(--warning)';
+      status.textContent = `Error: ${j.error}`;
+    }
+  } catch(e) {
+    status.style.color = 'var(--warning)';
+    status.textContent = `Error: ${e.message}`;
+  }
+}
+</script>
+</body>
+</html>

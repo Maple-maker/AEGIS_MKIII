@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.git/
+.DS_Store
+briefs/
+data/
+config/
+audio/
+notes.md
+aegis_v1_working.py
+generate_counseling.py
+telegram_bot.py

@@ -1,0 +1,11 @@
+{
+  "_note": "Default habits. Copied to habits.json on first boot if not present.",
+  "habits": [
+    {"id": "morning-pt", "name": "Morning PT",     "color": "#66BB6A", "frequency": "daily"},
+    {"id": "no-junk",    "name": "Clean Eating",   "color": "#26C6DA", "frequency": "daily"},
+    {"id": "reading",    "name": "Read 30 Min",    "color": "#AB47BC", "frequency": "daily"},
+    {"id": "deep-work",  "name": "Deep Work",      "color": "#42A5F5", "frequency": "daily"},
+    {"id": "gratitude",  "name": "Gratitude Log",  "color": "#F7931A", "frequency": "daily"}
+  ],
+  "log": {}
+}

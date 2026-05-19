@@ -1,0 +1,37 @@
+{
+  "_note": "Default config. Copied to user_config.json on first boot if not present.",
+  "ai": {
+    "name": "AEGIS",
+    "full_name": "Adaptive Executive Guardian Intelligence System",
+    "tagline": "Your personal command intelligence system",
+    "voice": "fable",
+    "accent_color": "#00E5FF",
+    "theme": "dark"
+  },
+  "user": {
+    "name": "User",
+    "timezone": "America/New_York",
+    "primary_objective": ""
+  },
+  "integrations": {
+    "obsidian": { "enabled": false, "vault_path": "" },
+    "coinbase": { "enabled": false },
+    "google_calendar": { "enabled": false },
+    "telegram": { "enabled": false }
+  },
+  "data_sources": {
+    "bitcoin_portfolio": true,
+    "stock_portfolio": true,
+    "rss_feed": true,
+    "content_pipeline": false,
+    "intel_log": false
+  },
+  "hud": {
+    "panels_left": ["vitals", "telemetry"],
+    "panels_right": ["financial", "habits", "bitcoin_stack", "last_interaction"],
+    "show_coords": true
+  },
+  "onboarding": {
+    "completed": false
+  }
+}
