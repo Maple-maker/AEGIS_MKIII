@@ -784,16 +784,44 @@ body.light { --bg: #f4f5f7; --surface-1: #ffffff; --surface-2: #f0f1f3; --surfac
 }
 .hab-btn.done { background: var(--positive); border-color: var(--positive); }
 
-/* ── MISSION CONTROL BUTTON ───────────────────────────────────────────── */
-.mc-btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 6px 13px; border: 1px solid var(--signal-dim);
-  border-radius: 8px; font-size: 12px; color: var(--signal);
-  background: rgba(111,200,214,.05); cursor: pointer;
-  text-decoration: none; white-space: nowrap;
-  transition: background 120ms, border-color 120ms;
+/* ── QUICK LAUNCH ─────────────────────────────────────────────────────── */
+.launch-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px; margin-top: 4px;
 }
-.mc-btn:hover { background: rgba(111,200,214,.12); border-color: var(--signal); }
+.launch-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 10px 6px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--bg-2);
+  cursor: pointer; text-decoration: none;
+  transition: border-color 120ms, background 120ms;
+}
+.launch-btn:hover { border-color: var(--border-2); background: var(--surface-2); }
+.launch-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: grid; place-items: center; font-size: 16px; flex-shrink: 0;
+}
+.launch-label {
+  font-size: 10px; color: var(--text-3); text-align: center;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: .04em;
+  line-height: 1.2; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 100%;
+}
+
+/* ── VOICE CHAT ───────────────────────────────────────────────────────── */
+.voice-chat-btn {
+  display: flex; align-items: center; gap: 8px; padding: 7px 16px;
+  border: 1px solid var(--border); border-radius: 10px; cursor: pointer;
+  background: var(--surface); color: var(--text-2); font-size: 12px;
+  transition: border-color 150ms, color 150ms, background 150ms; white-space: nowrap;
+}
+.voice-chat-btn:hover { border-color: var(--signal); color: var(--signal); }
+.voice-chat-btn.recording {
+  border-color: var(--negative); color: var(--negative);
+  background: rgba(230,128,120,.07); animation: pulse-rec 1s ease-in-out infinite;
+}
+.voice-chat-btn.processing { border-color: var(--warning); color: var(--warning); pointer-events: none; }
+@keyframes pulse-rec { 0%,100%{opacity:1} 50%{opacity:.6} }
 </style>
 </head>
 <body>
@@ -904,17 +932,12 @@ body.light { --bg: #f4f5f7; --surface-1: #ffffff; --surface-2: #f0f1f3; --surfac
         <span class="kbd">⌘K</span>
       </div>
       <div class="topbar-right">
-        <div class="health-row" id="health-row"></div>
         <span class="pill" id="btc-pill"><span style="color:var(--text-2)">BTC</span>&nbsp;<span class="val" id="btc-price">—</span>&nbsp;<span class="val" id="btc-chg">—</span></span>
         <span class="pill" id="mstr-pill"><span style="color:var(--text-2)">MSTR</span>&nbsp;<span class="val" id="mstr-price">—</span>&nbsp;<span class="val" id="mstr-chg">—</span></span>
         <span class="pill">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
           Jordan · UTC+3
         </span>
-        <a class="mc-btn" href="/hud">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-          HUD
-        </a>
       </div>
     </div>
 
@@ -970,29 +993,12 @@ body.light { --bg: #f4f5f7; --surface-1: #ffffff; --surface-2: #f0f1f3; --surfac
         </div>
       </section>
 
-      <!-- ── 03 DAILY HABITS ───────────────────────────────────── -->
-      <section class="card c-4" data-section="home">
-        <div class="card-head">
-          <div class="card-title">
-            <span class="swatch" style="background:var(--positive)"></span>
-            03 // Daily Habits
-          </div>
-          <div class="card-meta" id="hab-health" style="color:var(--text-3)">Loading…</div>
-        </div>
-        <div id="hab-list">
-          <div class="skeleton s3"></div>
-          <div class="skeleton s2"></div>
-          <div class="skeleton s3"></div>
-          <div class="skeleton s2"></div>
-        </div>
-      </section>
-
-      <!-- ── 04 NET WORTH (pie) ────────────────────────────────── -->
+      <!-- ── 03 NET WORTH (pie) ────────────────────────────────── -->
       <section class="card c-4" data-section="home portfolio">
         <div class="card-head">
           <div class="card-title">
             <span class="swatch" style="background:var(--positive)"></span>
-            04 // Net Worth
+            03 // Net Worth
           </div>
           <div class="card-meta" id="nw-meta">All accounts</div>
         </div>
@@ -1253,6 +1259,18 @@ body.light { --bg: #f4f5f7; --surface-1: #ffffff; --surface-2: #f0f1f3; --surfac
         </div>
       </section>
 
+      <!-- ── QUICK LAUNCH ───────────────────────────────────────── -->
+      <section class="card c-12" data-section="home">
+        <div class="card-head">
+          <div class="card-title">
+            <span class="swatch" style="background:var(--signal)"></span>
+            Quick Launch
+          </div>
+          <div class="card-meta">Apps &amp; sites</div>
+        </div>
+        <div class="launch-grid" id="launch-grid"></div>
+      </section>
+
       <!-- ── 06 X INTELLIGENCE ──────────────────────────────────── -->
       <section class="card c-6" data-section="home intel">
         <div class="card-head">
@@ -1398,9 +1416,13 @@ body.light { --bg: #f4f5f7; --surface-1: #ffffff; --surface-2: #f0f1f3; --surfac
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l8 4-8 4-8-4 8-4z"/><path d="M4 11l8 4 8-4M4 15l8 4 8-4"/></svg>
         </div>
         <div class="ask" id="composer-text">
-          <b>AEGIS:</b> Standing by.
+          <b>AEGIS:</b> Standing by. Press ⌘K to ask anything, or speak below.
         </div>
         <div class="chips">
+          <button class="voice-chat-btn" id="voice-chat-btn" onclick="toggleVoiceChat()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+            Speak to AEGIS
+          </button>
           <button class="voice-btn" id="brief-btn" onclick="runBrief()">
             <svg class="voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
             Run brief
@@ -2454,8 +2476,7 @@ async function loadMNAV() {
 
 // ── Init ─────────────────────────────────────────────────────────────────
 async function init() {
-  initHealthDots();
-  checkHealth();
+  renderLaunchGrid();
 
   await Promise.all([
     loadPortfolio(),
@@ -2470,13 +2491,10 @@ async function init() {
     loadContent(),
     loadComposer(),
     loadCalendar(),
-    loadHabits(),
     loadConfig(),
   ]);
   setInterval(() => { loadPortfolio(); loadFinancePulse(); loadMNAV(); loadNetWorth(); }, 5 * 60 * 1000);
   setInterval(() => { loadOnchain(); loadGoals(); loadFinancePulse(); }, 15 * 60 * 1000);
-  setInterval(() => { loadHabits(); }, 2 * 60 * 1000);
-  setInterval(() => { checkHealth(); }, 30 * 1000);
 }
 init();
 
@@ -2607,6 +2625,89 @@ async function qaSubmitNote() {
     status.style.color = 'var(--warning)';
     status.textContent = `Error: ${e.message}`;
   }
+}
+
+// ── Quick Launch ─────────────────────────────────────────────────────────
+const LAUNCH_APPS = [
+  { label: 'Robinhood',   url: 'https://robinhood.com',                       bg: '#00c805', icon: '📈' },
+  { label: 'Coinbase',    url: 'https://coinbase.com',                         bg: '#0052ff', icon: '₿'  },
+  { label: 'Strategy',    url: 'https://strategy.com',                         bg: '#f7931a', icon: '⚡'  },
+  { label: 'Mempool',     url: 'https://mempool.space',                        bg: '#9B8CE6', icon: '⛓'  },
+  { label: 'YT Studio',   url: 'https://studio.youtube.com',                   bg: '#ff0000', icon: '▶'  },
+  { label: 'Obsidian',    url: 'obsidian://open',                              bg: '#7C3AED', icon: '🔮'  },
+  { label: 'Telegram',    url: 'https://web.telegram.org',                     bg: '#2AABEE', icon: '✈'  },
+  { label: 'Calendar',    url: 'https://calendar.google.com',                  bg: '#4285F4', icon: '📅'  },
+  { label: 'ArmyIgnite',  url: 'https://armyignite.army.mil',                  bg: '#66BB6A', icon: '🎖'  },
+  { label: 'milConnect',  url: 'https://milconnect.dmdc.osd.mil',              bg: '#3D424B', icon: '🪖'  },
+  { label: 'MyPay',       url: 'https://mypay.dfas.mil',                       bg: '#5FCB95', icon: '💰'  },
+  { label: 'Canva',       url: 'https://canva.com',                            bg: '#00C4CC', icon: '🎨'  },
+];
+
+function renderLaunchGrid() {
+  const grid = document.getElementById('launch-grid');
+  if (!grid) return;
+  grid.innerHTML = LAUNCH_APPS.map(app =>
+    `<a class="launch-btn" href="${app.url}" target="_blank" rel="noopener">
+      <div class="launch-icon" style="background:${app.bg}18;border:1px solid ${app.bg}30">${app.icon}</div>
+      <span class="launch-label">${app.label}</span>
+    </a>`
+  ).join('');
+}
+
+// ── Voice Chat ────────────────────────────────────────────────────────────
+let _recorder = null;
+let _recChunks = [];
+
+async function toggleVoiceChat() {
+  const btn = document.getElementById('voice-chat-btn');
+  if (_recorder && _recorder.state === 'recording') {
+    _recorder.stop();
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    _recChunks = [];
+    _recorder.ondataavailable = e => { if (e.data.size > 0) _recChunks.push(e.data); };
+    _recorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      _recorder = null;
+      const blob = new Blob(_recChunks, { type: 'audio/webm' });
+      await _sendVoice(blob);
+    };
+    _recorder.start();
+    btn.className = 'voice-chat-btn recording';
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg> Stop recording`;
+  } catch(e) {
+    document.getElementById('composer-text').innerHTML = `<b>AEGIS:</b> Microphone access denied — check browser permissions.`;
+  }
+}
+
+async function _sendVoice(blob) {
+  const btn = document.getElementById('voice-chat-btn');
+  btn.className = 'voice-chat-btn processing';
+  btn.innerHTML = `<div class="wave"><span></span><span></span><span></span><span></span><span></span></div> Processing…`;
+  document.getElementById('composer-text').innerHTML = `<b>AEGIS:</b> Transcribing…`;
+  try {
+    const form = new FormData();
+    form.append('audio', blob, 'query.webm');
+    const r = await fetch(`${API}/api/voice/query`, { method: 'POST', body: form });
+    const j = await r.json();
+    if (j.ok) {
+      document.getElementById('composer-text').innerHTML =
+        `<span style="color:var(--text-3)">You:</span> ${j.transcript}<br><b>AEGIS:</b> ${j.response}`;
+      if (j.audio) {
+        const audio = new Audio(`${API}${j.audio}`);
+        audio.play();
+      }
+    } else {
+      document.getElementById('composer-text').innerHTML = `<b>AEGIS:</b> ${j.error || 'Voice error — check OpenAI key.'}`;
+    }
+  } catch(e) {
+    document.getElementById('composer-text').innerHTML = `<b>AEGIS:</b> Voice offline — ${e.message}`;
+  }
+  btn.className = 'voice-chat-btn';
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg> Speak to AEGIS`;
 }
 
 // ── Command Palette ───────────────────────────────────────────────────────
