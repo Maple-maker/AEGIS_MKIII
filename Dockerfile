@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY dashboard_server.py .
 COPY sources/ ./sources/
 COPY dashboard/ ./dashboard/
+COPY config/ ./config/
 
 # Create data directories (Railway Volume will mount over /app/data)
 RUN mkdir -p /app/config /app/data /app/briefs /app/audio

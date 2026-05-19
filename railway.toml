@@ -3,7 +3,7 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "gunicorn dashboard_server:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120"
+startCommand = "sh -c 'gunicorn dashboard_server:app --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile -'"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
