@@ -594,7 +594,7 @@ def index():
         cfg = json.loads(CONFIG_FILE.read_text()) if CONFIG_FILE.exists() else {}
         if cfg.get("onboarding", {}).get("completed"):
             from flask import redirect
-            return redirect("/hud")
+            return redirect("/")
     except Exception:
         pass
     return send_from_directory("dashboard", "land.html")
@@ -810,6 +810,31 @@ def api_vault_graph():
         return jsonify({"ok": True, "nodes": node_list, "edges": edges})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/ask", methods=["POST"])
+def api_ask():
+    """Quick text query to AEGIS via Claude."""
+    data = request.get_json() or {}
+    q = data.get("q", "").strip()
+    if not q:
+        return jsonify({"ok": False, "error": "No query provided"})
+    try:
+        from anthropic import Anthropic as Ant
+        client = Ant(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        msg = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=512,
+            system=(
+                "You are AEGIS — Adaptive Executive Guardian Intelligence System. "
+                "A sharp, concise personal command intelligence AI for a deployed US Army officer. "
+                "Answer in 1–3 sentences. Be direct, useful, no fluff."
+            ),
+            messages=[{"role": "user", "content": q}],
+        )
+        return jsonify({"ok": True, "answer": msg.content[0].text})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
 
 
 @app.route("/api/config/integrations/test", methods=["POST"])

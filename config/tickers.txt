@@ -1,0 +1,13 @@
+# AEGIS portfolio tickers.
+# One ticker per line. Lines starting with # are ignored (use them for grouping/comments).
+# Stocks use plain symbols (AAPL). Crypto uses Yahoo format (BTC-USD, ETH-USD).
+
+# === STOCKS ===
+MSTR
+HUT
+SOFI
+AIS
+DRAM
+
+# === CRYPTO ===
+BTC-USD
